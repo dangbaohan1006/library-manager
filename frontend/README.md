@@ -1,89 +1,16 @@
-# Library Manager - Frontend
+# React + Vite
 
-React + Vite + TypeScript + Shadcn/UI frontend application.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 🚀 Quick Start
+Currently, two official plugins are available:
 
-```bash
-# Install dependencies
-yarn
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-# Run development server
-yarn dev
+## React Compiler
 
-# Build for production
-yarn build
+The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
 
-# Preview production build
-yarn preview
-```
+## Expanding the ESLint configuration
 
-## 📦 Scripts
-
-- `yarn dev` - Start development server (http://localhost:5173)
-- `yarn build` - Build for production
-- `yarn preview` - Preview production build
-- `yarn lint` - Run ESLint
-
-## 🎨 UI Components
-
-This project uses **Shadcn/UI** components with TailwindCSS:
-
-- Button
-- Card
-- Input
-- Label
-- Select
-- Table
-- Dialog
-
-All components are located in `src/components/ui/`
-
-## 📂 Project Structure
-
-```
-src/
-├── api/              # API client and services
-├── components/       # React components
-│   ├── ui/          # Shadcn/UI components
-│   └── Layout.tsx   # Main layout
-├── pages/           # Page components
-├── lib/             # Utility functions
-├── App.tsx          # Main app component
-├── main.tsx         # Entry point
-└── index.css        # Global styles
-```
-
-## 🔌 API Configuration
-
-The API base URL is configured in `src/api/client.ts`:
-
-```typescript
-const API_BASE_URL = 'http://localhost:8000';
-```
-
-Update this if your backend runs on a different port.
-
-## 🎯 Features
-
-- ✅ Books management with CRUD operations
-- ✅ Members management
-- ✅ Loan/return functionality
-- ✅ Real-time search and filtering
-- ✅ Toast notifications
-- ✅ Form validation
-- ✅ Responsive design
-- ✅ Loading states
-- ✅ Error handling
-
-## 🛠️ Technologies
-
-- **React 18** - UI library
-- **Vite** - Build tool
-- **TypeScript** - Type safety
-- **React Router** - Routing
-- **Axios** - HTTP client
-- **TailwindCSS** - Styling
-- **Shadcn/UI** - UI components
-- **Lucide React** - Icons
-- **React Hot Toast** - Notifications
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
