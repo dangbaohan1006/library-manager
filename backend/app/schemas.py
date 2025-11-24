@@ -64,6 +64,9 @@ class LoanCreate(LoanBase):
 
 class LoanResponse(LoanBase):
     id: int
+    book_id: Optional[int] = None
+    member_id: Optional[int] = None
+    
     loan_date: date
     due_date: date
     return_date: Optional[date] = None

@@ -13,36 +13,31 @@ import { getBooks, borrowBook, updateBook, deleteBook, createBook, BASE_URL, che
 const { Meta } = Card;
 const { Title } = Typography;
 
-// --- [NEW COMPONENT] BookCover: Xử lý ảnh thông minh ---
+// Component BookCover (Đã tối ưu lỗi ảnh 556)
 const BookCover = ({ item, getFileUrl }) => {
-    // State lưu URL ảnh hiện tại
-    const [imgSrc, setImgSrc] = useState(null);
+    const [imgSrc, setImgSrc] = useState("https://placehold.co/160x240/1f1f3e/FFF?text=Loading");
+    const [hasError, setHasError] = useState(false);
 
-    // Logic chọn nguồn ảnh ban đầu
     useEffect(() => {
+        setHasError(false);
         if (item.image_path) {
-            // Nếu DB có đường dẫn ảnh (từ Supabase hoặc Upload) -> Dùng nó
             setImgSrc(getFileUrl(item.image_path));
         } else {
-            // Nếu không -> Dùng Open Library
-            // Thêm ?default=false để ép trả về lỗi 404 nếu không tìm thấy ảnh (để trigger onError)
-            const cleanIsbn = item.isbn.replace(/-/g, '').replace(/ /g, '');
+            const cleanIsbn = item.isbn ? item.isbn.replace(/-/g, '').replace(/ /g, '') : '';
             setImgSrc(`https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg?default=false`);
         }
     }, [item, getFileUrl]);
 
-    // Xử lý khi ảnh bị lỗi (Fallback Chain)
     const handleError = () => {
+        if (hasError) return;
+        setHasError(true);
         const cleanIsbn = item.isbn ? item.isbn.replace(/-/g, '').replace(/ /g, '') : '';
         const googleUrl = `https://books.google.com/books/content?vid=ISBN${cleanIsbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
         const placeholder = "https://placehold.co/160x240/1f1f3e/FFF?text=No+Cover";
 
-        // Logic chuyển đổi nguồn
         if (imgSrc !== googleUrl && imgSrc !== placeholder) {
-            // Lần 1: Thử sang Google Books (Nguồn dự phòng tốt nhất)
             setImgSrc(googleUrl);
-        } else if (imgSrc === googleUrl) {
-            // Lần 2: Google cũng lỗi nốt -> Dùng ảnh Placeholder
+        } else {
             setImgSrc(placeholder);
         }
     };
@@ -51,7 +46,7 @@ const BookCover = ({ item, getFileUrl }) => {
         <div style={{ height: 260, background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '10px' }}>
             <img
                 alt={item.title}
-                src={imgSrc || "https://placehold.co/160x240/1f1f3e/FFF?text=Loading"}
+                src={imgSrc}
                 onError={handleError}
                 style={{ height: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 4, transition: 'all 0.3s' }}
             />
@@ -90,11 +85,19 @@ const BooksPage = () => {
         fetchBooks();
     }, []);
 
+    // [FIX] Reset form Create khi mở modal
     useEffect(() => {
         if (isCreateModalOpen) {
             createForm.resetFields();
         }
     }, [isCreateModalOpen, createForm]);
+
+    // [FIX QUAN TRỌNG] Reset form Access khi mở modal (Sửa lỗi 'not connected')
+    useEffect(() => {
+        if (isAccessModalOpen) {
+            accessForm.resetFields();
+        }
+    }, [isAccessModalOpen, accessForm]);
 
     const fetchBooks = async () => {
         setLoading(true);
@@ -150,19 +153,20 @@ const BooksPage = () => {
             if (typeof errorDetail === 'string') {
                 message.error(errorDetail);
             } else if (Array.isArray(errorDetail)) {
-                message.error(`Lỗi: ${errorDetail[0].msg} (${errorDetail[0].loc[1]})`);
+                message.error(`Lỗi: ${errorDetail[0].msg}`);
             } else {
-                message.error("Không thể tạo sách. Vui lòng thử lại.");
+                message.error("Không thể tạo sách.");
             }
         } finally {
             setConfirmLoading(false);
         }
     };
 
+    // [FIX] Logic click nút Đọc
     const handleClickRead = (book) => {
         setSelectedBook(book);
+        // Không gọi accessForm.resetFields() ở đây nữa!
         setIsAccessModalOpen(true);
-        accessForm.resetFields();
     };
 
     const handleCheckAccess = async (values) => {
@@ -172,11 +176,17 @@ const BooksPage = () => {
             if (res.data.has_access) {
                 message.success("Xác thực thành công!");
                 setIsAccessModalOpen(false);
-                const url = getFileUrl(selectedBook.file_path);
-                setReadingBookUrl(url);
-                setIsReadModalOpen(true);
+                
+                // Kiểm tra xem sách có file PDF không
+                if (selectedBook.file_path) {
+                    const url = getFileUrl(selectedBook.file_path);
+                    setReadingBookUrl(url);
+                    setIsReadModalOpen(true);
+                } else {
+                    message.warning("Sách này chưa có file PDF để đọc.");
+                }
             } else {
-                message.error("Bạn chưa mượn cuốn sách này!");
+                message.error("Bạn chưa mượn cuốn sách này hoặc đã trả rồi!");
             }
         } catch (error) {
             message.error("Lỗi kiểm tra quyền truy cập");
@@ -218,14 +228,10 @@ const BooksPage = () => {
     const handleUpdateBook = async (values) => {
         setConfirmLoading(true);
         try {
-            // [FIX] Chuyển sang dùng FormData để gửi được cả Text và File
             const formData = new FormData();
-            
             if (values.title) formData.append('title', values.title);
             if (values.author) formData.append('author', values.author);
             if (values.total_copies) formData.append('total_copies', String(values.total_copies));
-
-            // Kiểm tra nếu có file ảnh mới được chọn
             if (values.cover_image && values.cover_image.length > 0) {
                 formData.append('cover_image', values.cover_image[0].originFileObj);
             }
@@ -233,9 +239,8 @@ const BooksPage = () => {
             await updateBook(selectedBook.id, formData);
             message.success("Cập nhật thành công!");
             setIsUpdateModalOpen(false);
-            fetchBooks(); // Load lại danh sách để thấy ảnh mới
+            fetchBooks();
         } catch (error) {
-            console.error(error);
             message.error("Lỗi cập nhật sách");
         } finally {
             setConfirmLoading(false);
@@ -279,7 +284,6 @@ const BooksPage = () => {
                         <Card
                             hoverable
                             style={{ borderRadius: 16, overflow: 'hidden', background: '#1f2937', border: 'none' }}
-                            // [UPDATE] Sử dụng Component BookCover mới
                             cover={<BookCover item={item} getFileUrl={getFileUrl} />}
                             actions={[
                                 <Dropdown
@@ -341,7 +345,7 @@ const BooksPage = () => {
                 )}
             />
 
-            {/* --- MODALS --- (Giữ nguyên các modal như cũ) */}
+            {/* --- CÁC MODAL --- */}
             <Modal
                 title={<span style={{ color: '#f3f4f6', fontSize: 18 }}>Thêm sách mới</span>}
                 open={isCreateModalOpen}
@@ -395,20 +399,23 @@ const BooksPage = () => {
                 </Form>
             </Modal>
 
+            {/* Modal Xác thực để Đọc */}
             <Modal
-                title={<span style={{ color: '#f3f4f6' }}><LockOutlined /> Xác thực</span>}
+                title={<span style={{ color: '#f3f4f6' }}><LockOutlined /> Xác thực quyền đọc</span>}
                 open={isAccessModalOpen}
                 onCancel={() => setIsAccessModalOpen(false)}
                 onOk={() => accessForm.submit()}
                 confirmLoading={confirmLoading}
                 destroyOnHidden={true}
-                okText="Kiểm tra"
+                okText="Kiểm tra & Đọc"
                 okButtonProps={{ style: { background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937' } }}
             >
-                <div style={{ marginBottom: 16, color: '#9ca3af' }}>Nhập ID thành viên để mượn/đọc sách.</div>
+                <div style={{ marginBottom: 16, color: '#9ca3af' }}>
+                    Vui lòng nhập ID thành viên đã mượn cuốn sách này.
+                </div>
                 <Form form={accessForm} layout="vertical" onFinish={handleCheckAccess}>
-                    <Form.Item name="memberId" label="ID Thành viên" rules={[{ required: true }]}>
-                        <Input type="number" autoFocus />
+                    <Form.Item name="memberId" label="ID Thành viên" rules={[{ required: true, message: 'Vui lòng nhập ID!' }]}>
+                        <Input type="number" autoFocus placeholder="Ví dụ: 1" />
                     </Form.Item>
                 </Form>
             </Modal>
@@ -466,10 +473,9 @@ const BooksPage = () => {
                     <Form.Item name="total_copies" label="Tổng số lượng">
                         <InputNumber min={1} style={{ width: '100%' }} />
                     </Form.Item>
-                    
                     <Form.Item 
                         name="cover_image" 
-                        label="Cập nhật ảnh bìa" 
+                        label="Cập nhật ảnh bìa (Để trống nếu không đổi)" 
                         valuePropName="fileList" 
                         getValueFromEvent={normFile}
                     >
@@ -477,7 +483,6 @@ const BooksPage = () => {
                             <Button icon={<FileImageOutlined />}>Chọn ảnh mới</Button>
                         </Upload>
                     </Form.Item>
-
                     <Button
                         type="primary"
                         htmlType="submit"
