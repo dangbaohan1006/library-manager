@@ -53,6 +53,12 @@ frontend/build/
 .env.local
 .env.*.local
 
+# Shell scripts (deployment scripts)
+*.sh
+
+# SSH keys
+*.pem
+
 # Logs
 logs/
 *.log
