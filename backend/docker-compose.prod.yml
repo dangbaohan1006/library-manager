@@ -1,0 +1,51 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE:-quanluonluon/library-manager-backend:latest}
+    container_name: library_manager_backend
+    env_file: .env
+    restart: always
+
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP router
+      - "traefik.http.routers.app.rule=Host(`beta-api.gigafit.space`)"
+      - "traefik.http.routers.app.entrypoints=web"
+
+      # Tell traefik the internal port
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
+
+      # HTTPS router
+      - "traefik.http.routers.app-secure.rule=Host(`beta-api.gigafit.space`)"
+      - "traefik.http.routers.app-secure.entrypoints=websecure"
+      - "traefik.http.routers.app-secure.tls=true"
+      - "traefik.http.routers.app-secure.tls.certresolver=myresolver"
+
+      # Sticky session for WebSocket (if needed)
+      - "traefik.http.services.app.loadbalancer.sticky=true"
+      - "traefik.http.services.app.loadbalancer.sticky.cookie.name=library_api_affinity"
+      - "traefik.http.services.app.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.app.loadbalancer.sticky.cookie.httpOnly=true"
+
+    volumes:
+      - ./uploaded_books:/app/uploaded_books
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - traefik_net
+
+networks:
+  traefik_net:
+    external: true
+

@@ -14,7 +14,10 @@ load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    redirect_slashes=False  # Prevent 307 redirects for trailing slashes
+)
 
 UPLOAD_DIR = "uploaded_books"
 if not os.path.exists(UPLOAD_DIR):
@@ -24,9 +27,10 @@ app.mount("/uploaded_books", StaticFiles(directory=UPLOAD_DIR), name="uploaded_b
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # Cannot be True when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(books.router)
