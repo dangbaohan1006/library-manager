@@ -1,21 +1,36 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/app/main.py"
+      "destination": "/api/index.py"
     },
     {
       "source": "/(.*)",
       "destination": "/frontend/index.html"
     }
   ],
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "framework": "vite",
-  "functions": {
-    "backend/app/main.py": {
-      "maxDuration": 10
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+      ]
     }
-  }
+  ]
 }
