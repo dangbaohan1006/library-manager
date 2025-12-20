@@ -7,15 +7,15 @@
 ![Frontend](https://img.shields.io/badge/frontend-React_Vite-61DAFB.svg)
 ![Database](https://img.shields.io/badge/database-PostgreSQL%20%7C%20SQLite-336791.svg)
 
-## 📖 Giới thiệu (Introduction)
+## 📖 Introduction
 
 **Library Manager** là giải pháp phần mềm quản lý thư viện được xây dựng theo kiến trúc Monorepo. Dự án giải quyết các vấn đề nghiệp vụ cốt lõi như quản lý sách, theo dõi mượn trả, tính phí phạt và đặt chỗ trước.
 
-Điểm đặc biệt của hệ thống là khả năng xử lý **Đồng thời (Concurrency)** an toàn, ngăn chặn lỗi Race Condition khi nhiều người cùng mượn một cuốn sách cuối cùng, đồng thời tối ưu hóa UX với cơ chế tự động lấy ảnh bìa sách thông minh.
+Điểm đặc biệt của hệ thống là khả năng xử lý **Đồng thời** an toàn, ngăn chặn lỗi Race Condition khi nhiều người cùng mượn một cuốn sách cuối cùng, đồng thời tối ưu hóa UX với cơ chế tự động lấy ảnh bìa sách thông minh.
 
 ---
 
-## 📂 Cấu trúc dự án (Project Structure)
+## 📂 Project Structure
 
 Cấu trúc thư mục thực tế của dự án:
 
@@ -24,7 +24,7 @@ library-manager/
 ├── backend/
 │   ├── alembic/                # Quản lý Database Migrations
 │   ├── app/
-│   │   ├── core/               # Cấu hình hệ thống & Hằng số (Config, Constants)
+│   │   ├── core/               # Config, Constants
 │   │   ├── db/                 # Kết nối CSDL (Session, Engine)
 │   │   ├── routers/            # API Controllers
 │   │   │   ├── analytics.py    # Thống kê báo cáo
@@ -81,15 +81,15 @@ library-manager/
 
 ---
 
-## ⚡ Tính năng & Business Rules (Yêu cầu nghiệp vụ)
+## ⚡ Tính năng & Business Rules
 
-### 1. Quản lý Mượn/Trả (Transaction Safe)
+### 1. Quản lý Mượn/Trả
 
 * **Quy tắc:** Mỗi thành viên chỉ được mượn tối đa **3 cuốn sách**.
 * **Cơ chế khóa (Locking):** Sử dụng `SELECT ... FOR UPDATE` (Pessimistic Locking) trong `loans.py` để đảm bảo khi cuốn sách cuối cùng đang được xử lý cho người A, người B sẽ không thể mượn được.
 * **Tính phí phạt:** Tự động tính toán số ngày quá hạn * 5.000 VNĐ/ngày khi trả sách.
 
-### 2. Quản lý Kho sách (Smart Inventory)
+### 2. Quản lý Kho sách
 
 * **Tìm kiếm:** Hỗ trợ tìm theo Tên, Tác giả, ISBN (có Indexing DB).
 * **Ảnh bìa tự động (Smart Cover):** Hệ thống không lưu file ảnh. Frontend tự động hiển thị ảnh bìa theo chiến lược thác nước:
@@ -99,12 +99,12 @@ library-manager/
 
 
 
-### 3. Đặt trước (Reservations)
+### 3. Đặt trước
 
 * Cho phép thành viên đặt trước sách khi hết hàng.
 * Hệ thống chặn xóa sách nếu sách đó đang có người mượn hoặc đang có đơn đặt trước (`books.py` delete logic).
 
-### 4. Báo cáo (Analytics)
+### 4. Báo cáo
 
 * Dashboard hiển thị Real-time: Tổng sách, Thành viên, Đang mượn, Quá hạn.
 * Danh sách Top sách được mượn nhiều nhất.
@@ -141,7 +141,7 @@ erDiagram
 
 ---
 
-## ⚙️ Hướng dẫn Cài đặt & Cấu hình (Configuration)
+## ⚙️ Configuration
 
 ### 1. Backend Setup
 
