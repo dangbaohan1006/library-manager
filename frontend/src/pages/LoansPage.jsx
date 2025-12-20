@@ -111,7 +111,7 @@ const LoansPage = () => {
         <div style={{ padding: 0 }}>
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <Title level={2} style={{ margin: 0 }}>Quản lý Mượn / Trả</Title>
+                    <Title level={2} style={{ margin: 0 }}>Quản lý mượn / trả</Title>
                     <Typography.Text type="secondary">Theo dõi lịch sử mượn sách của thành viên</Typography.Text>
                 </div>
                 <Button icon={<SyncOutlined />} onClick={fetchLoans}>Làm mới</Button>

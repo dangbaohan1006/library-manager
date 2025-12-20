@@ -257,3 +257,84 @@ To contribute:
 
 Built with ❤️ using FastAPI and React
 
+
+library-manager
+├─ .pytest_cache
+│  ├─ CACHEDIR.TAG
+│  ├─ README.md
+│  └─ v
+│     └─ cache
+│        ├─ lastfailed
+│        └─ nodeids
+├─ backend
+│  ├─ .pytest_cache
+│  │  ├─ CACHEDIR.TAG
+│  │  ├─ README.md
+│  │  └─ v
+│  │     └─ cache
+│  │        └─ nodeids
+│  ├─ alembic
+│  │  ├─ env.py
+│  │  ├─ README
+│  │  ├─ script.py.mako
+│  │  └─ versions
+│  │     └─ e504c475f527_init_db.py
+│  ├─ alembic.ini
+│  ├─ app
+│  │  ├─ core
+│  │  │  ├─ config.py
+│  │  │  └─ constants.py
+│  │  ├─ db
+│  │  │  └─ database.py
+│  │  ├─ index.py
+│  │  ├─ main.py
+│  │  ├─ models.py
+│  │  ├─ routers
+│  │  │  ├─ analytics.py
+│  │  │  ├─ books.py
+│  │  │  ├─ loans.py
+│  │  │  ├─ members.py
+│  │  │  ├─ reservations.py
+│  │  │  └─ __init__.py
+│  │  ├─ schemas.py
+│  │  └─ __init__.py
+│  ├─ poetry.lock
+│  ├─ pyproject.toml
+│  ├─ pytest.ini
+│  ├─ tests
+│  │  ├─ conftest.py
+│  │  └─ test_integration.py
+│  ├─ uploaded_books
+│  └─ vercel-export.txt
+├─ docker-compose.yml
+├─ frontend
+│  ├─ eslint.config.js
+│  ├─ index.html
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ public
+│  │  └─ vite.svg
+│  ├─ README.md
+│  ├─ src
+│  │  ├─ App.jsx
+│  │  ├─ assets
+│  │  │  └─ react.svg
+│  │  ├─ components
+│  │  ├─ index.css
+│  │  ├─ layout
+│  │  │  └─ DashboardLayout.jsx
+│  │  ├─ main.jsx
+│  │  ├─ pages
+│  │  │  ├─ BooksPage.jsx
+│  │  │  ├─ DashboardPage.jsx
+│  │  │  ├─ LoansPage.jsx
+│  │  │  └─ MembersPage.jsx
+│  │  └─ services
+│  │     └─ api.js
+│  └─ vite.config.js
+├─ package.json
+├─ README.md
+├─ SETUP.md
+└─ vercel.json
+
+```

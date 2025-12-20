@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, CheckConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, CheckConstraint, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -41,9 +41,7 @@ class Book(Base):
     isbn = Column(String, unique=True, index=True, nullable=False)
     total_copies = Column(Integer, default=1, nullable=False)
     available_copies = Column(Integer, default=1, nullable=False)
-    
-    file_path = Column(String, nullable=True)
-    image_path = Column(String, nullable=True)
+
 
     __table_args__ = (
         CheckConstraint('available_copies >= 0', name='check_available_copies_positive'),
@@ -58,7 +56,7 @@ class Loan(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    book_id = Column(Integer, ForeignKey("books.id", ondelete="SET NULL"), nullable=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="RESTRICT"), nullable=False)
     loan_date = Column(Date, server_default=func.current_date(), nullable=False)
     due_date = Column(Date, nullable=False)
     return_date = Column(Date, nullable=True)
@@ -66,7 +64,9 @@ class Loan(Base):
 
     __table_args__ = (
         CheckConstraint('due_date >= loan_date', name='check_due_date_valid'),
+        Index('idx_loan_overdue', 'status', 'return_date', 'due_date'),
     )
+    
 
     member = relationship("Member", back_populates="loans")
     book = relationship("Book", back_populates="loans")

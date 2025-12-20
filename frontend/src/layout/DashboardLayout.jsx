@@ -49,9 +49,9 @@ const DashboardLayout = ({ children }) => {
                     items={[
                         { key: '1', icon: <DashboardOutlined />, label: 'Tổng quan' },
                         { type: 'divider' },
-                        { key: '2', icon: <BookOutlined />, label: 'Quản lý Sách' },
+                        { key: '2', icon: <BookOutlined />, label: 'Quản lý sách' },
                         { key: '3', icon: <UserOutlined />, label: 'Thành viên' },
-                        { key: '4', icon: <ReadOutlined />, label: 'Mượn / Trả sách' },
+                        { key: '4', icon: <ReadOutlined />, label: 'Mượn / trả sách' },
                     ]}
                 />
             </Sider>

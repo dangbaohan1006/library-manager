@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import date
 from decimal import Decimal
 
+# book
 class BookBase(BaseModel):
     title: str = Field(..., min_length=1, example="Clean Code")
     author: str = Field(..., min_length=1, example="Robert C. Martin")
@@ -22,15 +23,17 @@ class BookBase(BaseModel):
 class BookCreate(BookBase):
     pass
 
+class BookUpdate(BookBase):
+    pass
+
 class BookResponse(BookBase):
     id: int
     available_copies: int
-    file_path: Optional[str] = None
-    image_path: Optional[str] = None 
 
     class Config:
         from_attributes = True
 
+# member
 class MemberBase(BaseModel):
     email: str = Field(..., example="user@example.com")
     full_name: str = Field(..., min_length=1, example="Nguyen Van A")
@@ -47,6 +50,7 @@ class MemberResponse(MemberBase):
     class Config:
         from_attributes = True
 
+# fines
 class FineResponse(BaseModel):
     id: int
     amount: float
@@ -55,12 +59,13 @@ class FineResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# loans
 class LoanBase(BaseModel):
     member_id: int
     book_id: int
 
 class LoanCreate(LoanBase):
-    days: int = Field(14, ge=1, le=14, description="Number of days to borrow")
+    days: int = Field(14, ge=1, le=30, description="Number of days to borrow")
 
 class LoanResponse(LoanBase):
     id: int
@@ -79,6 +84,7 @@ class LoanResponse(LoanBase):
     class Config:
         from_attributes = True
 
+# -reservations
 class ReservationBase(BaseModel):
     member_id: int
     book_id: int

@@ -97,7 +97,7 @@ const DashboardPage = () => {
         <div style={{ paddingBottom: 20 }}>
             <div style={{ marginBottom: 30, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <Title level={2} style={{ color: '#f3f4f6', margin: 0 }}>Thư viện Tổng hợp</Title>
+                    <Title level={2} style={{ color: '#f3f4f6', margin: 0 }}>Thư viện tổng hợp</Title>
                     <Text style={{ color: '#9ca3af' }}>Chào mừng quay trở lại, Admin!</Text>
                 </div>
                 <Tag color="#fbbf24" style={{ color: '#1f2937', fontWeight: 'bold', padding: '4px 12px', borderRadius: 20, border: 'none' }}>Premium Access</Tag>
