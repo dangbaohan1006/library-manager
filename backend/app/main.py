@@ -16,7 +16,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    redirect_slashes=False  # Prevent 307 redirects for trailing slashes
+    redirect_slashes=False
+    root_path="/api"
 )
 
 UPLOAD_DIR = "uploaded_books"
