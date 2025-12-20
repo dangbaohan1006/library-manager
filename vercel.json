@@ -1,15 +1,21 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "backend/app/main.py", "use": "@vercel/python" },
+  "rewrites": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "source": "/api/(.*)",
+      "destination": "/backend/app/main.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/index.html"
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "backend/app/main.py" },
-    { "src": "/(.*)", "dest": "frontend/$1" }
-  ]
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
+  "functions": {
+    "backend/app/main.py": {
+      "maxDuration": 10
+    }
+  }
 }

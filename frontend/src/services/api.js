@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = 'https://beta-api.gigafit.space';
+const API_URL = import.meta.env.PROD 
+    ? 'https://beta-api.gigafit.space' 
+    : 'http://127.0.0.1:8000';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -34,5 +36,6 @@ export const deleteMember = (id) => api.delete(`/members/${id}`);
 // analytics
 export const getDashboardStats = () => api.get('/analytics/dashboard');
 export const getTopBooks = () => api.get('/analytics/top-books');
+export const getOverdueList = () => api.get('/analytics/overdue-list');
 
 export default api;
