@@ -16,7 +16,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    redirect_slashes=False
+    redirect_slashes=False,
     root_path="/api"
 )
 

@@ -44,7 +44,9 @@ const DashboardLayout = ({ children }) => {
                     onClick={({ key }) => {
                         if (key === '1') navigate('/');
                         if (key === '2') navigate('/books');
+                        if (key === '3') navigate('/members');
                         if (key === '4') navigate('/loans');
+                        if (key === '5') navigate('/reservations');
                     }}
                     items={[
                         { key: '1', icon: <DashboardOutlined />, label: 'Tổng quan' },
@@ -52,6 +54,7 @@ const DashboardLayout = ({ children }) => {
                         { key: '2', icon: <BookOutlined />, label: 'Quản lý sách' },
                         { key: '3', icon: <UserOutlined />, label: 'Thành viên' },
                         { key: '4', icon: <ReadOutlined />, label: 'Mượn / trả sách' },
+                        { key: '5', icon: <BookOutlined />, label: 'Đặt trước' },
                     ]}
                 />
             </Sider>

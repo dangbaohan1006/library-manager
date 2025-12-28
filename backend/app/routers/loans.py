@@ -6,15 +6,13 @@ from typing import List
 from app.db.database import get_db
 from app.models import Loan, Book, Member, Fine, LoanStatus, FineStatus
 from app.schemas import LoanCreate, LoanResponse
+from app.core.constants import LoanLimits, FineRates
 
 router = APIRouter(
     prefix="/loans",
     tags=["Loans"],
     responses={404: {"description": "Not found"}},
 )
-
-MAX_LOANS_PER_MEMBER = 3
-FINE_PER_DAY = 5000  # Phí phạt 5000đ/ngày
 @router.post("/borrow", response_model=LoanResponse)
 def borrow_book(loan_in: LoanCreate, db: Session = Depends(get_db)):
     try:
@@ -27,7 +25,7 @@ def borrow_book(loan_in: LoanCreate, db: Session = Depends(get_db)):
             Loan.status == LoanStatus.ACTIVE
         ).count()
         
-        if active_loans_count >= MAX_LOANS_PER_MEMBER:
+        if active_loans_count >= LoanLimits.MAX_BOOKS_PER_MEMBER:
             raise HTTPException(status_code=400, detail="Limit reached")
 
         book = db.query(Book).filter(Book.id == loan_in.book_id).with_for_update().first()
@@ -39,7 +37,7 @@ def borrow_book(loan_in: LoanCreate, db: Session = Depends(get_db)):
         new_loan = Loan(
             member_id=loan_in.member_id,
             book_id=loan_in.book_id,
-            due_date=date.today() + timedelta(days=loan_in.days),
+            due_date=date.today() + timedelta(days=loan_in.days or LoanLimits.LOAN_DURATION_DAYS),
             status=LoanStatus.ACTIVE
         )
         db.add(new_loan)
@@ -67,7 +65,7 @@ def return_book(loan_id: int, db: Session = Depends(get_db)):
         
         if today > loan.due_date:
             overdue_days = (today - loan.due_date).days
-            fine_amount = overdue_days * FINE_PER_DAY
+            fine_amount = overdue_days * FineRates.FINE_PER_DAY
             new_fine = Fine(loan_id=loan.id, amount=fine_amount, status=FineStatus.PENDING)
             db.add(new_fine)
             

@@ -33,6 +33,11 @@ export const createMember = (data) => api.post('/members/', data);
 export const updateMember = (id, data) => api.put(`/members/${id}`, data);
 export const deleteMember = (id) => api.delete(`/members/${id}`);
 
+// reservations
+export const getReservations = () => api.get('/reservations/');
+export const createReservation = (data) => api.post('/reservations/reserve', data);
+export const deleteReservation = (id) => api.delete(`/reservations/${id}`);
+
 // analytics
 export const getDashboardStats = () => api.get('/analytics/dashboard');
 export const getTopBooks = () => api.get('/analytics/top-books');

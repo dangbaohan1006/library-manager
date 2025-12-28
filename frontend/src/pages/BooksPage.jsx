@@ -7,7 +7,7 @@ import {
     ShoppingCartOutlined, EditOutlined, DeleteOutlined,
     MoreOutlined, PlusOutlined
 } from '@ant-design/icons';
-import { getBooks, borrowBook, updateBook, deleteBook, createBook, BASE_URL } from '../services/api';
+import { getBooks, borrowBook, updateBook, deleteBook, createBook, BASE_URL, createReservation } from '../services/api';
 
 const { Meta } = Card;
 const { Title } = Typography;
@@ -74,12 +74,14 @@ const BooksPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
+    const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
 
     const [selectedBook, setSelectedBook] = useState(null);
 
     const [borrowForm] = Form.useForm();
     const [updateForm] = Form.useForm();
     const [createForm] = Form.useForm();
+    const [reserveForm] = Form.useForm();
 
     useEffect(() => {
         fetchBooks();
@@ -189,6 +191,29 @@ const BooksPage = () => {
         }
     };
 
+    const showReserveModal = (book) => {
+        setSelectedBook(book);
+        reserveForm.setFieldsValue({ memberId: null });
+        setIsReserveModalOpen(true);
+    };
+
+    const handleReserve = async (values) => {
+        setConfirmLoading(true);
+        try {
+            await createReservation({
+                book_id: selectedBook.id,
+                member_id: parseInt(values.memberId)
+            });
+            message.success("Đặt trước thành công!");
+            setIsReserveModalOpen(false);
+            fetchBooks();
+        } catch (error) {
+            message.error(error.response?.data?.detail || "Lỗi đặt trước sách");
+        } finally {
+            setConfirmLoading(false);
+        }
+    };
+
     if (loading) return <div style={{ textAlign: 'center', marginTop: 50 }}><Spin size="large" /></div>;
 
     return (
@@ -219,6 +244,7 @@ const BooksPage = () => {
                             cover={<BookCover item={item} />}
                             actions={[
                                 <Dropdown
+                                    key="manage"
                                     menu={{
                                         items: [
                                             { key: 'edit', label: 'Cập nhật', icon: <EditOutlined />, onClick: () => handleShowUpdateModal(item) },
@@ -229,15 +255,26 @@ const BooksPage = () => {
                                 >
                                     <Button type="text" icon={<MoreOutlined />} style={{ color: '#9ca3af' }}>Quản lý</Button>
                                 </Dropdown>,
-                                <Button
-                                    type="primary"
-                                    disabled={item.available_copies === 0}
-                                    onClick={() => showBorrowModal(item)}
-                                    icon={<ShoppingCartOutlined />}
-                                    style={{ borderRadius: 8, background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937', fontWeight: 'bold' }}
-                                >
-                                    Mượn
-                                </Button>
+                                item.available_copies > 0 ? (
+                                    <Button
+                                        key="borrow"
+                                        type="primary"
+                                        onClick={() => showBorrowModal(item)}
+                                        icon={<ShoppingCartOutlined />}
+                                        style={{ borderRadius: 8, background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937', fontWeight: 'bold' }}
+                                    >
+                                        Mượn
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        key="reserve"
+                                        type="default"
+                                        onClick={() => showReserveModal(item)}
+                                        style={{ borderRadius: 8, borderColor: '#fbbf24', color: '#fbbf24', fontWeight: 'bold' }}
+                                    >
+                                        Đặt trước
+                                    </Button>
+                                )
                             ]}
                         >
                             <Meta
@@ -352,6 +389,22 @@ const BooksPage = () => {
                     </Form.Item>
                     <Form.Item name="days" label="Số ngày mượn">
                         <InputNumber min={1} max={30} style={{ width: '100%' }} />
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="Đặt trước sách"
+                open={isReserveModalOpen}
+                onCancel={() => setIsReserveModalOpen(false)}
+                onOk={() => reserveForm.submit()}
+                confirmLoading={confirmLoading}
+                destroyOnHidden={true}
+                okButtonProps={{ style: { background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937' } }}
+            >
+                <Form form={reserveForm} layout="vertical" onFinish={handleReserve}>
+                    <Form.Item name="memberId" label="ID Thành viên" rules={[{ required: true }]}>
+                        <Input type="number" />
                     </Form.Item>
                 </Form>
             </Modal>

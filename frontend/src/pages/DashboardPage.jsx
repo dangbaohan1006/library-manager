@@ -4,7 +4,7 @@ import {
     ReadOutlined, UserOutlined, SyncOutlined, WarningOutlined, 
     FireOutlined, ArrowRightOutlined, TrophyOutlined
 } from '@ant-design/icons';
-import { getDashboardStats, getTopBooks, BASE_URL } from '../services/api';
+import { getDashboardStats, getTopBooks, getOverdueList, BASE_URL } from '../services/api';
 
 const { Title, Text } = Typography;
 
@@ -60,14 +60,20 @@ const BookCover = ({ item, getFileUrl, height = 200, style = {} }) => {
 const DashboardPage = () => {
     const [stats, setStats] = useState(null);
     const [topBooks, setTopBooks] = useState([]);
+    const [overdueList, setOverdueList] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [statsRes, topBooksRes] = await Promise.all([getDashboardStats(), getTopBooks()]);
+                const [statsRes, topBooksRes, overdueRes] = await Promise.all([
+                    getDashboardStats(), 
+                    getTopBooks(),
+                    getOverdueList()
+                ]);
                 setStats(statsRes.data);
                 setTopBooks(topBooksRes.data);
+                setOverdueList(overdueRes.data || []);
             } catch (error) { console.error(error); } 
             finally { setLoading(false); }
         };
@@ -146,7 +152,7 @@ const DashboardPage = () => {
                 </Col>
 
                 <Col xs={24} lg={8}>
-                    <Card title={<span style={{ color: '#f3f4f6' }}><TrophyOutlined /> Bảng xếp hạng</span>} bordered={false} style={{ background: '#1f2937', borderRadius: 16 }} headStyle={{ borderBottom: '1px solid #374151' }}>
+                    <Card title={<span style={{ color: '#f3f4f6' }}><TrophyOutlined /> Bảng xếp hạng</span>} bordered={false} style={{ background: '#1f2937', borderRadius: 16, marginBottom: 24 }} headStyle={{ borderBottom: '1px solid #374151' }}>
                         <List itemLayout="horizontal" dataSource={topBooks} renderItem={(item, index) => (
                             <List.Item style={{ borderBottom: '1px solid #374151', padding: '12px 0' }}>
                                 <List.Item.Meta
@@ -159,6 +165,43 @@ const DashboardPage = () => {
                                 <div style={{ textAlign: 'right' }}><div style={{ color: '#fbbf24', fontWeight: 'bold' }}>#{index + 1}</div><Text style={{ fontSize: 10, color: '#6b7280' }}>{item.total_loans} mượn</Text></div>
                             </List.Item>
                         )} />
+                    </Card>
+
+                    <Card 
+                        title={<span style={{ color: '#f3f4f6' }}><WarningOutlined style={{ color: '#ef4444' }} /> Sách quá hạn</span>} 
+                        bordered={false} 
+                        style={{ background: '#1f2937', borderRadius: 16 }} 
+                        headStyle={{ borderBottom: '1px solid #374151' }}
+                    >
+                        {overdueList.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af' }}>
+                                <Text>Không có sách quá hạn</Text>
+                            </div>
+                        ) : (
+                            <List 
+                                itemLayout="vertical" 
+                                dataSource={overdueList.slice(0, 5)} 
+                                renderItem={(item) => (
+                                    <List.Item style={{ borderBottom: '1px solid #374151', padding: '12px 0' }}>
+                                        <div style={{ width: '100%' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <Text style={{ color: '#f3f4f6', fontSize: 13, fontWeight: 600 }}>{item.book_title}</Text>
+                                                <Tag color="red">{item.days_overdue} ngày</Tag>
+                                            </div>
+                                            <Text style={{ color: '#9ca3af', fontSize: 12, display: 'block', marginBottom: 4 }}>
+                                                {item.member_name} ({item.member_email})
+                                            </Text>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                                                <Text style={{ color: '#6b7280' }}>Hạn: {new Date(item.due_date).toLocaleDateString('vi-VN')}</Text>
+                                                <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                                                    Phí: {item.estimated_fine?.toLocaleString('vi-VN')}đ
+                                                </Text>
+                                            </div>
+                                        </div>
+                                    </List.Item>
+                                )} 
+                            />
+                        )}
                     </Card>
                 </Col>
             </Row>

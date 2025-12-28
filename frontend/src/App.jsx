@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import BooksPage from './pages/BooksPage';
 import LoansPage from './pages/LoansPage';
 import MembersPage from './pages/MembersPage';
+import ReservationsPage from './pages/ReservationsPage';
 import 'antd/dist/reset.css';
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
                     <Route path="/books" element={<BooksPage />} />
                     <Route path="/loans" element={<LoansPage />} />
                     <Route path="/members" element={<MembersPage />} />
+                    <Route path="/reservations" element={<ReservationsPage />} />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </DashboardLayout>
