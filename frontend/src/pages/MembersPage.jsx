@@ -12,6 +12,7 @@ const MembersPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
     const [form] = Form.useForm();
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 8 });
 
     const fetchMembers = async () => {
         try {
@@ -45,6 +46,13 @@ const MembersPage = () => {
     };
 
     const columns = [
+        {
+            title: 'STT',
+            key: 'stt',
+            width: 60,
+            align: 'center',
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+        },
         {
             title: 'Thành viên',
             dataIndex: 'full_name',
@@ -111,7 +119,16 @@ const MembersPage = () => {
                     dataSource={members} 
                     rowKey="id" 
                     loading={loading}
-                    pagination={{ pageSize: 8 }}
+                    pagination={{ 
+                        ...pagination,
+                        showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+                        onChange: (page, pageSize) => {
+                            setPagination({ current: page, pageSize });
+                        },
+                        onShowSizeChange: (current, size) => {
+                            setPagination({ current: 1, pageSize: size });
+                        }
+                    }}
                     style={{ background: 'transparent' }}
                 />
             </Card>

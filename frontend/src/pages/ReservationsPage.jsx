@@ -14,6 +14,7 @@ const ReservationsPage = () => {
     const [form] = Form.useForm();
     const [books, setBooks] = useState([]);
     const [members, setMembers] = useState([]);
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
     const fetchReservations = async () => {
         try {
@@ -136,10 +137,11 @@ const ReservationsPage = () => {
 
     const columns = [
         {
-            title: 'ID',
-            dataIndex: 'id',
-            key: 'id',
+            title: 'STT',
+            key: 'stt',
             width: 60,
+            align: 'center',
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
         },
         {
             title: 'Sách',
@@ -261,7 +263,16 @@ const ReservationsPage = () => {
                     dataSource={reservations} 
                     rowKey="id" 
                     loading={loading}
-                    pagination={{ pageSize: 10 }}
+                    pagination={{ 
+                        ...pagination,
+                        showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+                        onChange: (page, pageSize) => {
+                            setPagination({ current: page, pageSize });
+                        },
+                        onShowSizeChange: (current, size) => {
+                            setPagination({ current: 1, pageSize: size });
+                        }
+                    }}
                     style={{ background: 'transparent' }}
                 />
             </Card>

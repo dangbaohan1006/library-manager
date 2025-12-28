@@ -9,6 +9,7 @@ const { Title } = Typography;
 const LoansPage = () => {
     const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
     const fetchLoans = async () => {
         setLoading(true);
@@ -123,10 +124,11 @@ const LoansPage = () => {
 
     const columns = [
         { 
-            title: 'ID', 
-            dataIndex: 'id', 
-            key: 'id',
+            title: 'STT', 
+            key: 'stt',
             width: 60,
+            align: 'center',
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
         },
         { 
             title: 'Sách mượn', 
@@ -280,7 +282,16 @@ const LoansPage = () => {
                     dataSource={loans} 
                     rowKey="id" 
                     loading={loading}
-                    pagination={{ pageSize: 10 }}
+                    pagination={{ 
+                        ...pagination,
+                        showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+                        onChange: (page, pageSize) => {
+                            setPagination({ current: page, pageSize });
+                        },
+                        onShowSizeChange: (current, size) => {
+                            setPagination({ current: 1, pageSize: size });
+                        }
+                    }}
                 />
             </Card>
         </div>
