@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   List,
   Card,
@@ -42,7 +42,7 @@ const { Title } = Typography;
 const defaultCover = "https://placehold.co/160x240/1f1f3e/FFF?text=No+Cover";
 
 const BookCover = ({ item }) => {
-  return (
+    return (
     <div
       style={{
         height: 260,
@@ -55,15 +55,15 @@ const BookCover = ({ item }) => {
       }}
     >
       {item.image_path && (
-        <img
-          alt={item.title}
+            <img
+                alt={item.title}
           src={item.image_path}
           onError={() => defaultCover}
-          style={{
+                style={{ 
             height: "100%",
             maxWidth: "100%",
             objectFit: "contain",
-            borderRadius: 4,
+                    borderRadius: 4,
             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
           }}
         />
@@ -98,33 +98,32 @@ const BookCover = ({ item }) => {
             HẾT HÀNG
           </div>
         )}
-      </div>
-    </div>
-  );
+            </div>
+        </div>
+    );
 };
 
 const BooksPage = () => {
-  const { message } = App.useApp();
+    const { message } = App.useApp();
 
-  const [books, setBooks] = useState([]);
+    const [books, setBooks] = useState([]);
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [confirmLoading, setConfirmLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
   const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
 
-  const [selectedBook, setSelectedBook] = useState(null);
+    const [selectedBook, setSelectedBook] = useState(null);
 
-  const [borrowForm] = Form.useForm();
-  const [updateForm] = Form.useForm();
-  const [createForm] = Form.useForm();
+    const [borrowForm] = Form.useForm();
+    const [updateForm] = Form.useForm();
+    const [createForm] = Form.useForm();
   const [reserveForm] = Form.useForm();
 
-  useEffect(() => {
-    fetchBooks();
+    useEffect(() => {
     const loadMembers = async () => {
       try {
         const membersRes = await getMembers();
@@ -134,28 +133,32 @@ const BooksPage = () => {
       }
     };
     loadMembers();
-  }, []);
+    }, []);
+
+    useEffect(() => {
+        if (isCreateModalOpen) createForm.resetFields();
+    }, [isCreateModalOpen, createForm]);
+
+  const fetchBooks = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await getBooks();
+            setBooks(response.data);
+        } catch (error) {
+            console.error(error);
+            message.error("Không thể tải danh sách sách");
+        } finally {
+            setLoading(false);
+        }
+  }, [message]);
 
   useEffect(() => {
-    if (isCreateModalOpen) createForm.resetFields();
-  }, [isCreateModalOpen, createForm]);
+    fetchBooks();
+  }, [fetchBooks]);
 
-  const fetchBooks = async () => {
-    setLoading(true);
-    try {
-      const response = await getBooks();
-      setBooks(response.data);
-    } catch (error) {
-      console.error(error);
-      message.error("Không thể tải danh sách sách");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateBook = async (values) => {
-    setConfirmLoading(true);
-    try {
+    const handleCreateBook = async (values) => {
+        setConfirmLoading(true);
+        try {
       let imagePath = null;
 
       // Upload image first if present
@@ -178,33 +181,33 @@ const BooksPage = () => {
       }
 
       // Create book with image path
-      const payload = {
-        title: values.title,
-        author: values.author,
-        isbn: values.isbn,
-        total_copies: values.total_copies,
-        publication_year: values.publication_year,
+            const payload = {
+                title: values.title,
+                author: values.author,
+                isbn: values.isbn,
+                total_copies: values.total_copies,
+                publication_year: values.publication_year,
         edition: values.edition,
         image_path: imagePath,
-      };
+            };
 
-      await createBook(payload);
-      message.success("Thêm sách thành công!");
-      setIsCreateModalOpen(false);
+            await createBook(payload);
+            message.success("Thêm sách thành công!");
+            setIsCreateModalOpen(false);
       createForm.resetFields();
-      fetchBooks();
-    } catch (error) {
+            fetchBooks();
+        } catch (error) {
       const errorDetail = error.response?.data?.detail || error.message;
       message.error(
         typeof errorDetail === "string" ? errorDetail : "Lỗi khi tạo sách"
       );
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
+        } finally {
+            setConfirmLoading(false);
+        }
+    };
 
-  const handleShowUpdateModal = (book) => {
-    setSelectedBook(book);
+    const handleShowUpdateModal = (book) => {
+        setSelectedBook(book);
     const formValues = {
       ...book,
       image: book.image_path
@@ -219,12 +222,12 @@ const BooksPage = () => {
         : [],
     };
     updateForm.setFieldsValue(formValues);
-    setIsUpdateModalOpen(true);
-  };
+        setIsUpdateModalOpen(true);
+    };
 
-  const handleUpdateBook = async (values) => {
-    setConfirmLoading(true);
-    try {
+    const handleUpdateBook = async (values) => {
+        setConfirmLoading(true);
+        try {
       let imagePath = selectedBook.image_path; // Keep existing image by default
 
       // Upload new image if present
@@ -252,56 +255,117 @@ const BooksPage = () => {
         imagePath = null;
       }
 
-      const payload = {
-        title: values.title,
-        author: values.author,
-        isbn: values.isbn,
-        total_copies: values.total_copies,
-        publication_year: values.publication_year,
+            const payload = {
+                title: values.title,
+                author: values.author,
+                isbn: values.isbn,
+                total_copies: values.total_copies,
+                publication_year: values.publication_year,
         edition: values.edition,
         image_path: imagePath,
-      };
+            };
 
-      await updateBook(selectedBook.id, payload);
-      message.success("Cập nhật thành công!");
-      setIsUpdateModalOpen(false);
-      fetchBooks();
-    } catch (error) {
-      message.error(error.response?.data?.detail || "Lỗi cập nhật sách");
-    } finally {
-      setConfirmLoading(false);
+            await updateBook(selectedBook.id, payload);
+            message.success("Cập nhật thành công!");
+            setIsUpdateModalOpen(false);
+            fetchBooks();
+        } catch (error) {
+            message.error(error.response?.data?.detail || "Lỗi cập nhật sách");
+        } finally {
+            setConfirmLoading(false);
+        }
+    };
+
+    const handleDeleteBook = async (id) => {
+        try {
+            await deleteBook(id);
+            message.success("Đã xóa sách");
+            fetchBooks();
+        } catch (e) {
+            message.error(e.response?.data?.detail || "Không thể xóa");
+        }
+    };
+
+    const showBorrowModal = (book) => {
+    // Validate book availability before opening modal
+    if (book.available_copies < 1) {
+      message.warning("Sách này hiện không còn sẵn sàng để mượn!");
+      return;
     }
-  };
+        setSelectedBook(book);
+        borrowForm.setFieldsValue({ days: 14, memberId: null });
+        setIsBorrowModalOpen(true);
+    };
 
-  const handleDeleteBook = async (id) => {
-    try {
-      await deleteBook(id);
-      message.success("Đã xóa sách");
-      fetchBooks();
-    } catch (e) {
-      message.error(e.response?.data?.detail || "Không thể xóa");
+    const handleBorrow = async (values) => {
+    // Validate inputs
+    if (!values.memberId) {
+      message.error("Vui lòng chọn thành viên!");
+      return;
     }
-  };
 
-  const showBorrowModal = (book) => {
-    setSelectedBook(book);
-    borrowForm.setFieldsValue({ days: 14, memberId: null });
-    setIsBorrowModalOpen(true);
-  };
+    const selectedMember = members.find(m => m.id === parseInt(values.memberId));
+    if (!selectedMember) {
+      message.error("Thành viên không hợp lệ!");
+      return;
+    }
 
-  const handleBorrow = async (values) => {
-    setConfirmLoading(true);
-    try {
-      await borrowBook({
-        book_id: selectedBook.id,
-        member_id: parseInt(values.memberId),
-        days: values.days || 14,
-      });
-      message.success(`Mượn thành công!`);
+    if (!selectedMember.is_active) {
+      message.error("Thành viên này đã bị vô hiệu hóa!");
+      return;
+    }
+
+    const days = values.days || 14;
+    if (days < 1 || days > 30) {
+      message.error("Số ngày mượn phải từ 1 đến 30 ngày!");
+      return;
+    }
+
+    // Validate book availability again
+    if (!selectedBook || selectedBook.available_copies < 1) {
+      message.error("Sách này hiện không còn sẵn sàng!");
       setIsBorrowModalOpen(false);
-      fetchBooks();
+      fetchBooks(); // Refresh to get latest data
+      return;
+    }
+
+        setConfirmLoading(true);
+        try {
+      const response = await borrowBook({
+                book_id: selectedBook.id,
+                member_id: parseInt(values.memberId),
+        days: days,
+            });
+      
+      message.success(
+        `Mượn thành công! "${selectedBook.title}" đã được mượn bởi ${selectedMember.full_name}. Hạn trả: ${new Date(response.data.due_date).toLocaleDateString('vi-VN')}`
+      );
+            setIsBorrowModalOpen(false);
+      borrowForm.resetFields();
+      fetchBooks(); // Refresh book list to update available_copies
     } catch (error) {
-      message.error(error.response?.data?.detail || "Lỗi mượn sách");
+      const errorDetail = error.response?.data?.detail || error.message;
+      let errorMessage = "Lỗi mượn sách";
+      
+      // Handle specific error messages
+      if (typeof errorDetail === 'string') {
+        if (errorDetail.includes('Limit reached') || errorDetail.includes('limit')) {
+          errorMessage = "Thành viên đã đạt giới hạn số sách mượn tối đa!";
+        } else if (errorDetail.includes('Out of stock') || errorDetail.includes('stock')) {
+          errorMessage = "Sách này hiện không còn sẵn sàng!";
+        } else if (errorDetail.includes('Member invalid') || errorDetail.includes('invalid')) {
+          errorMessage = "Thành viên không hợp lệ hoặc đã bị vô hiệu hóa!";
+        } else {
+          errorMessage = errorDetail;
+        }
+      }
+      
+      message.error(errorMessage);
+      
+      // Refresh books if there was an availability issue
+      if (errorDetail.includes('stock') || errorDetail.includes('Out of stock')) {
+        fetchBooks();
+      }
     } finally {
       setConfirmLoading(false);
     }
@@ -322,13 +386,13 @@ const BooksPage = () => {
       });
       message.success("Đặt trước thành công!");
       setIsReserveModalOpen(false);
-      fetchBooks();
-    } catch (error) {
+            fetchBooks();
+        } catch (error) {
       message.error(error.response?.data?.detail || "Lỗi đặt trước sách");
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
+        } finally {
+            setConfirmLoading(false);
+        }
+    };
 
   if (loading)
     return (
@@ -354,11 +418,11 @@ const BooksPage = () => {
           <Typography.Text style={{ color: "#9ca3af" }}>
             Quản lý {books.length} đầu sách
           </Typography.Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setIsCreateModalOpen(true)}
+                </div>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsCreateModalOpen(true)}
           style={{
             background: "#fbbf24",
             borderColor: "#fbbf24",
@@ -366,30 +430,30 @@ const BooksPage = () => {
             fontWeight: "bold",
             height: 40,
           }}
-        >
-          Thêm sách
-        </Button>
-      </div>
+                >
+                    Thêm sách
+                </Button>
+            </div>
 
-      <List
-        grid={{ gutter: 24, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 5 }}
-        dataSource={books}
-        renderItem={(item) => (
-          <List.Item>
-            <Card
-              hoverable
+            <List
+                grid={{ gutter: 24, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 5 }}
+                dataSource={books}
+                renderItem={(item) => (
+                    <List.Item>
+                        <Card
+                            hoverable
               style={{
                 borderRadius: 16,
                 overflow: "hidden",
                 background: "#1f2937",
                 border: "none",
               }}
-              cover={<BookCover item={item} />}
-              actions={[
-                <Dropdown
+                            cover={<BookCover item={item} />}
+                            actions={[
+                                <Dropdown
                   key="manage"
-                  menu={{
-                    items: [
+                                    menu={{
+                                        items: [
                       {
                         key: "edit",
                         label: "Cập nhật",
@@ -421,13 +485,13 @@ const BooksPage = () => {
                   >
                     Quản lý
                   </Button>
-                </Dropdown>,
+                                </Dropdown>,
                 item.available_copies > 0 ? (
-                  <Button
+                                <Button
                     key="borrow"
-                    type="primary"
-                    onClick={() => showBorrowModal(item)}
-                    icon={<ShoppingCartOutlined />}
+                                    type="primary"
+                                    onClick={() => showBorrowModal(item)}
+                                    icon={<ShoppingCartOutlined />}
                     style={{
                       borderRadius: 8,
                       background: "#fbbf24",
@@ -435,9 +499,9 @@ const BooksPage = () => {
                       color: "#1f2937",
                       fontWeight: "bold",
                     }}
-                  >
-                    Mượn
-                  </Button>
+                                >
+                                    Mượn
+                                </Button>
                 ) : (
                   <Button
                     key="reserve"
@@ -453,11 +517,11 @@ const BooksPage = () => {
                     Đặt trước
                   </Button>
                 ),
-              ]}
-            >
-              <Meta
-                title={
-                  <Tooltip title={item.title}>
+                            ]}
+                        >
+                            <Meta
+                                title={
+                                    <Tooltip title={item.title}>
                     <div
                       style={{
                         color: "#f3f4f6",
@@ -468,12 +532,12 @@ const BooksPage = () => {
                         textOverflow: "ellipsis",
                       }}
                     >
-                      {item.title}
-                    </div>
-                  </Tooltip>
-                }
-                description={
-                  <div>
+                                            {item.title}
+                                        </div>
+                                    </Tooltip>
+                                }
+                                description={
+                                    <div>
                     <div
                       style={{
                         color: "#9ca3af",
@@ -505,41 +569,41 @@ const BooksPage = () => {
                       <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
                         Kho: {item.available_copies}/{item.total_copies}
                       </span>
-                    </div>
-                  </div>
-                }
-              />
-            </Card>
-          </List.Item>
-        )}
-      />
+                                        </div>
+                                    </div>
+                                }
+                            />
+                        </Card>
+                    </List.Item>
+                )}
+            />
 
-      <Modal
+            <Modal
         title={<span style={{ color: "#f3f4f6" }}>Thêm sách mới</span>}
-        open={isCreateModalOpen}
-        onCancel={() => setIsCreateModalOpen(false)}
-        footer={null}
-        centered
-        destroyOnHidden
-      >
-        <Form form={createForm} layout="vertical" onFinish={handleCreateBook}>
+                open={isCreateModalOpen}
+                onCancel={() => setIsCreateModalOpen(false)}
+                footer={null}
+                centered
+                destroyOnHidden
+            >
+                <Form form={createForm} layout="vertical" onFinish={handleCreateBook}>
           <Form.Item
             name="title"
             label="Tiêu đề sách"
             rules={[{ required: true }]}
           >
-            <Input placeholder="Nhập tiêu đề" />
-          </Form.Item>
-          <Form.Item name="author" label="Tác giả" rules={[{ required: true }]}>
-            <Input placeholder="Nhập tên tác giả" />
-          </Form.Item>
+                        <Input placeholder="Nhập tiêu đề" />
+                    </Form.Item>
+                    <Form.Item name="author" label="Tác giả" rules={[{ required: true }]}>
+                        <Input placeholder="Nhập tên tác giả" />
+                    </Form.Item>
           <Form.Item
             name="isbn"
             label="Mã ISBN"
             rules={[{ required: true, min: 10 }]}
           >
-            <Input placeholder="Ví dụ: 978-0132350884" />
-          </Form.Item>
+                        <Input placeholder="Ví dụ: 978-0132350884" />
+                    </Form.Item>
           <div style={{ display: "flex", gap: 16 }}>
             <Form.Item
               name="total_copies"
@@ -548,18 +612,18 @@ const BooksPage = () => {
               style={{ flex: 1 }}
             >
               <InputNumber min={1} style={{ width: "100%" }} />
-            </Form.Item>
+                        </Form.Item>
             <Form.Item
               name="publication_year"
               label="Năm XB"
               style={{ flex: 1 }}
             >
               <InputNumber style={{ width: "100%" }} placeholder="YYYY" />
-            </Form.Item>
-          </div>
-          <Form.Item name="edition" label="Phiên bản (Tùy chọn)">
-            <Input placeholder="Ví dụ: Tái bản lần 1" />
-          </Form.Item>
+                        </Form.Item>
+                    </div>
+                    <Form.Item name="edition" label="Phiên bản (Tùy chọn)">
+                        <Input placeholder="Ví dụ: Tái bản lần 1" />
+                    </Form.Item>
           <Form.Item
             name="image"
             label="Ảnh bìa sách (Tùy chọn)"
@@ -596,37 +660,37 @@ const BooksPage = () => {
               fontWeight: "bold",
             }}
           >
-            Xác nhận
-          </Button>
-        </Form>
-      </Modal>
+                        Xác nhận
+                    </Button>
+                </Form>
+            </Modal>
 
-      <Modal
-        title="Cập nhật thông tin"
-        open={isUpdateModalOpen}
-        onCancel={() => setIsUpdateModalOpen(false)}
-        footer={null}
-        destroyOnHidden
-      >
-        <Form form={updateForm} layout="vertical" onFinish={handleUpdateBook}>
-          <Form.Item name="title" label="Tiêu đề">
-            <Input />
-          </Form.Item>
-          <Form.Item name="author" label="Tác giả">
-            <Input />
-          </Form.Item>
-          <Form.Item name="isbn" label="ISBN">
-            <Input />
-          </Form.Item>
-          <Form.Item name="total_copies" label="Tổng số lượng">
+            <Modal
+                title="Cập nhật thông tin"
+                open={isUpdateModalOpen}
+                onCancel={() => setIsUpdateModalOpen(false)}
+                footer={null}
+                destroyOnHidden
+            >
+                <Form form={updateForm} layout="vertical" onFinish={handleUpdateBook}>
+                    <Form.Item name="title" label="Tiêu đề">
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="author" label="Tác giả">
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="isbn" label="ISBN">
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="total_copies" label="Tổng số lượng">
             <InputNumber type="number" min={1} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="publication_year" label="Năm XB">
+                    </Form.Item>
+                    <Form.Item name="publication_year" label="Năm XB">
             <InputNumber type="number" style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="edition" label="Phiên bản">
-            <Input />
-          </Form.Item>
+                    </Form.Item>
+                    <Form.Item name="edition" label="Phiên bản">
+                        <Input />
+                    </Form.Item>
           <Form.Item
             name="image"
             label="Ảnh bìa sách (Tùy chọn)"
@@ -651,11 +715,11 @@ const BooksPage = () => {
               </div>
             </Upload>
           </Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={confirmLoading}
-            block
+                    <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={confirmLoading}
+                        block
             style={{
               marginTop: 10,
               background: "#fbbf24",
@@ -663,27 +727,60 @@ const BooksPage = () => {
               color: "#1f2937",
               fontWeight: "bold",
             }}
-          >
-            Lưu thay đổi
-          </Button>
-        </Form>
-      </Modal>
+                    >
+                        Lưu thay đổi
+                    </Button>
+                </Form>
+            </Modal>
 
-      <Modal
-        title="Mượn sách"
-        open={isBorrowModalOpen}
-        onCancel={() => setIsBorrowModalOpen(false)}
-        onOk={() => borrowForm.submit()}
-        confirmLoading={confirmLoading}
-        destroyOnHidden
+            <Modal
+        title={
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#f3f4f6" }}>
+              Mượn sách
+            </div>
+            {selectedBook && (
+              <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 4, fontWeight: 400 }}>
+                {selectedBook.title} - {selectedBook.author}
+              </div>
+            )}
+          </div>
+        }
+                open={isBorrowModalOpen}
+        onCancel={() => {
+          setIsBorrowModalOpen(false);
+          borrowForm.resetFields();
+        }}
+                onOk={() => borrowForm.submit()}
+                confirmLoading={confirmLoading}
+                destroyOnHidden
+        okText="Xác nhận mượn"
+        cancelText="Hủy"
         okButtonProps={{
           style: {
             background: "#fbbf24",
             borderColor: "#fbbf24",
             color: "#1f2937",
+            fontWeight: "bold",
           },
         }}
+        width={500}
       >
+        {selectedBook && (
+          <div style={{ marginBottom: 20, padding: 12, background: "#1f2937", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ color: "#9ca3af", fontSize: 12 }}>Sách còn lại:</span>
+              <span style={{ color: selectedBook.available_copies > 0 ? "#10b981" : "#ef4444", fontWeight: "bold" }}>
+                {selectedBook.available_copies} / {selectedBook.total_copies}
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#9ca3af", fontSize: 12 }}>ISBN:</span>
+              <span style={{ color: "#f3f4f6", fontSize: 12 }}>{selectedBook.isbn}</span>
+            </div>
+          </div>
+        )}
+        
         <Form
           form={borrowForm}
           layout="vertical"
@@ -693,7 +790,22 @@ const BooksPage = () => {
           <Form.Item
             name="memberId"
             label="Thành viên"
-            rules={[{ required: true, message: 'Vui lòng chọn thành viên!' }]}
+            rules={[
+              { required: true, message: 'Vui lòng chọn thành viên!' },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  const member = members.find(m => m.id === parseInt(value));
+                  if (!member) {
+                    return Promise.reject(new Error('Thành viên không tồn tại!'));
+                  }
+                  if (!member.is_active) {
+                    return Promise.reject(new Error('Thành viên này đã bị vô hiệu hóa!'));
+                  }
+                  return Promise.resolve();
+                }
+              }
+            ]}
           >
             <Select
               placeholder="Chọn thành viên"
@@ -701,17 +813,71 @@ const BooksPage = () => {
               filterOption={(input, option) =>
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
-              options={members.map(member => ({
-                value: member.id,
-                label: `${member.full_name} (${member.email})`
-              }))}
+              options={members
+                .filter(member => member.is_active)
+                .map(member => ({
+                  value: member.id,
+                  label: `${member.full_name} (${member.email})`
+                }))}
               style={{ width: '100%' }}
               notFoundContent={members.length === 0 ? 'Đang tải...' : 'Không tìm thấy'}
             />
           </Form.Item>
-          <Form.Item name="days" label="Số ngày mượn">
-            <InputNumber type="number" min={1} max={30} style={{ width: "100%" }} />
+          
+          <Form.Item 
+            name="days" 
+            label="Số ngày mượn"
+            rules={[
+              { required: true, message: 'Vui lòng nhập số ngày mượn!' },
+              { type: 'number', min: 1, message: 'Số ngày mượn tối thiểu là 1 ngày!' },
+              { type: 'number', max: 30, message: 'Số ngày mượn tối đa là 30 ngày!' }
+            ]}
+          >
+            <InputNumber 
+              min={1} 
+              max={30} 
+              style={{ width: "100%" }} 
+              placeholder="Nhập số ngày (1-30)"
+            />
           </Form.Item>
+          
+          <Form.Item shouldUpdate={(prevValues, currentValues) => prevValues.days !== currentValues.days}>
+            {() => {
+              const days = borrowForm.getFieldValue('days') || 14;
+              const dueDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+              
+              return selectedBook && days > 0 ? (
+                <div style={{ 
+                  marginTop: 12, 
+                  padding: 12, 
+                  background: "#111827", 
+                  borderRadius: 8,
+                  border: "1px solid #374151"
+                }}>
+                  <div style={{ color: "#9ca3af", fontSize: 12, marginBottom: 4 }}>
+                    Thông tin mượn sách:
+                  </div>
+                  <div style={{ color: "#f3f4f6", fontSize: 13 }}>
+                    <div style={{ marginBottom: 4 }}>
+                      📅 Hạn trả dự kiến: <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
+                        {dueDate.toLocaleDateString('vi-VN', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </div>
+                    {selectedBook.available_copies === 1 && (
+                      <div style={{ color: "#fbbf24", fontSize: 11, marginTop: 4 }}>
+                        ⚠️ Đây là cuốn sách cuối cùng còn lại!
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null;
+            }}
+                    </Form.Item>
         </Form>
       </Modal>
 
@@ -749,11 +915,11 @@ const BooksPage = () => {
                style={{ width: '100%' }}
                notFoundContent={members.length === 0 ? 'Đang tải...' : 'Không tìm thấy'}
              />
-           </Form.Item>
-         </Form>
-      </Modal>
-    </div>
-  );
+                    </Form.Item>
+                </Form>
+            </Modal>
+        </div>
+    );
 };
 
 export default BooksPage;

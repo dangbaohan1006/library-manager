@@ -4,7 +4,7 @@ from datetime import timedelta, date
 from typing import List
 
 from app.db.database import get_db
-from app.models import Loan, Book, Member, Fine, LoanStatus, FineStatus
+from app.models import Loan, Book, Member, Fine, LoanStatus, FineStatus, Reservation
 from app.schemas import LoanCreate, LoanResponse
 from app.core.constants import LoanLimits, FineRates
 
@@ -34,6 +34,19 @@ def borrow_book(loan_in: LoanCreate, db: Session = Depends(get_db)):
 
         book.available_copies -= 1
         
+        # Update reservation status if reservation_id is provided
+        if loan_in.reservation_id:
+            reservation = db.query(Reservation).filter(Reservation.id == loan_in.reservation_id).first()
+            if reservation:
+                # Verify reservation matches the loan
+                if reservation.book_id == loan_in.book_id and reservation.member_id == loan_in.member_id:
+                    reservation.status = "approved"
+                else:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail="Reservation does not match the loan details"
+                    )
+        
         new_loan = Loan(
             member_id=loan_in.member_id,
             book_id=loan_in.book_id,
@@ -50,7 +63,10 @@ def borrow_book(loan_in: LoanCreate, db: Session = Depends(get_db)):
         raise e
 @router.post("/return/{loan_id}", response_model=LoanResponse)
 def return_book(loan_id: int, db: Session = Depends(get_db)):
-    loan = db.query(Loan).options(joinedload(Loan.book)).filter(Loan.id == loan_id).first()
+    loan = db.query(Loan).options(
+        joinedload(Loan.book),
+        joinedload(Loan.fines)
+    ).filter(Loan.id == loan_id).first()
     
     if not loan:
         raise HTTPException(status_code=404, detail="Loan not found")
@@ -100,3 +116,30 @@ def check_loan_access(book_id: int, member_id: int, db: Session = Depends(get_db
         Loan.status == LoanStatus.ACTIVE
     ).first()
     return {"has_access": loan is not None}
+
+@router.post("/fines/{fine_id}/pay", response_model=LoanResponse)
+def pay_fine(fine_id: int, db: Session = Depends(get_db)):
+    """Mark a fine as paid"""
+    fine = db.query(Fine).filter(Fine.id == fine_id).first()
+    if not fine:
+        raise HTTPException(status_code=404, detail="Fine not found")
+    
+    if fine.status == FineStatus.PAID:
+        raise HTTPException(status_code=400, detail="Fine is already paid")
+    
+    try:
+        fine.status = FineStatus.PAID
+        db.commit()
+        db.refresh(fine)
+        
+        # Return the loan with updated fine status
+        loan = db.query(Loan).options(
+            joinedload(Loan.book),
+            joinedload(Loan.member),
+            joinedload(Loan.fines)
+        ).filter(Loan.id == fine.loan_id).first()
+        
+        return loan
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update fine: {str(e)}")

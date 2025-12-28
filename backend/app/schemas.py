@@ -67,6 +67,7 @@ class LoanBase(BaseModel):
 
 class LoanCreate(LoanBase):
     days: int = Field(14, ge=1, le=30, description="Number of days to borrow")
+    reservation_id: Optional[int] = Field(None, description="Reservation ID if loan is created from reservation")
 
 class LoanResponse(LoanBase):
     id: int

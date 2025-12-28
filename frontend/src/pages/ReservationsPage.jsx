@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Card, Typography, Button, Modal, Form, Input, Select, DatePicker, message, Popconfirm, Space } from 'antd';
-import { BookOutlined, UserOutlined, CalendarOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { getReservations, createReservation, deleteReservation, getBooks, getMembers } from '../services/api';
+import { BookOutlined, UserOutlined, CalendarOutlined, DeleteOutlined, PlusOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { getReservations, createReservation, deleteReservation, getBooks, getMembers, borrowBook } from '../services/api';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -77,6 +77,63 @@ const ReservationsPage = () => {
         }
     };
 
+    const handleBorrowFromReservation = async (reservation) => {
+        // Validate book availability
+        if (!reservation.book) {
+            message.error("Thông tin sách không hợp lệ!");
+            return;
+        }
+
+        if (reservation.book.available_copies < 1) {
+            message.warning("Sách này hiện không còn sẵn sàng để mượn!");
+            return;
+        }
+
+        try {
+            // Create loan from reservation with reservation_id
+            await borrowBook({
+                book_id: reservation.book_id,
+                member_id: reservation.member_id,
+                days: 14, // Default loan duration
+                reservation_id: reservation.id, // Include reservation_id to update status
+            });
+
+            message.success({
+                content: (
+                    <div>
+                        <div style={{ marginBottom: 4, fontWeight: 'bold' }}>
+                            ✅ Mượn sách thành công!
+                        </div>
+                        <div style={{ fontSize: 12, color: '#52c41a' }}>
+                            Đã tạo mượn sách và cập nhật trạng thái đặt trước
+                        </div>
+                    </div>
+                ),
+                duration: 3,
+            });
+
+            fetchReservations();
+        } catch (error) {
+            const errorDetail = error.response?.data?.detail || error.message;
+            let errorMessage = "Lỗi khi tạo mượn sách";
+
+            // Handle specific error messages
+            if (typeof errorDetail === 'string') {
+                if (errorDetail.includes('Limit reached') || errorDetail.includes('limit')) {
+                    errorMessage = "Thành viên đã đạt giới hạn số sách mượn tối đa!";
+                } else if (errorDetail.includes('Out of stock') || errorDetail.includes('stock')) {
+                    errorMessage = "Sách này hiện không còn sẵn sàng!";
+                } else if (errorDetail.includes('Member invalid') || errorDetail.includes('invalid')) {
+                    errorMessage = "Thành viên không hợp lệ hoặc đã bị vô hiệu hóa!";
+                } else {
+                    errorMessage = errorDetail;
+                }
+            }
+
+            message.error(errorMessage);
+        }
+    };
+
     const columns = [
         {
             title: 'ID',
@@ -109,17 +166,62 @@ const ReservationsPage = () => {
             title: 'Trạng thái',
             dataIndex: 'status',
             key: 'status',
-            render: (status) => (
-                <Tag color={status === 'pending' ? 'orange' : status === 'fulfilled' ? 'green' : 'default'}>
-                    {status === 'pending' ? 'ĐANG CHỜ' : status === 'fulfilled' ? 'ĐÃ HOÀN THÀNH' : status.toUpperCase()}
-                </Tag>
-            )
+            render: (status) => {
+                let color = 'default';
+                let text = status.toUpperCase();
+                if (status === 'pending') {
+                    color = 'orange';
+                    text = 'ĐANG CHỜ';
+                } else if (status === 'approved') {
+                    color = 'green';
+                    text = 'ĐÃ DUYỆT';
+                } else if (status === 'fulfilled') {
+                    color = 'green';
+                    text = 'ĐÃ HOÀN THÀNH';
+                }
+                return (
+                    <Tag color={color}>
+                        {text}
+                    </Tag>
+                );
+            }
         },
         {
             title: 'Hành động',
             key: 'action',
+            width: 200,
             render: (_, record) => (
                 <Space size="middle">
+                    {record.status === 'pending' && record.book && record.book.available_copies > 0 && (
+                        <Popconfirm
+                            title="Xác nhận mượn sách"
+                            description={
+                                <div>
+                                    <div style={{ marginBottom: 8 }}>
+                                        Tạo mượn sách cho <strong>{record.member?.full_name}</strong>?
+                                    </div>
+                                    <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                        Sách: <strong>{record.book?.title}</strong>
+                                    </div>
+                                    <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+                                        Trạng thái đặt trước sẽ được cập nhật thành "Đã duyệt" sau khi mượn thành công.
+                                    </div>
+                                </div>
+                            }
+                            onConfirm={() => handleBorrowFromReservation(record)}
+                            okText="Mượn ngay"
+                            cancelText="Hủy"
+                        >
+                            <Button 
+                                type="primary" 
+                                size="small" 
+                                icon={<ShoppingCartOutlined />}
+                                style={{ background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937', fontWeight: 'bold' }}
+                            >
+                                Mượn sách
+                            </Button>
+                        </Popconfirm>
+                    )}
                     <Popconfirm
                         title="Xác nhận hủy đặt trước"
                         description="Bạn có chắc chắn muốn hủy đặt trước này?"

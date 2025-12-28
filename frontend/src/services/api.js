@@ -33,6 +33,7 @@ export const getLoans = () => api.get('/loans/');
 export const borrowBook = (data) => api.post('/loans/borrow', data);
 export const returnBook = (loanId) => api.post(`/loans/return/${loanId}`);
 export const checkLoanAccess = (bookId, memberId) => api.get(`/loans/check-access`, { params: { book_id: bookId, member_id: memberId } });
+export const payFine = (fineId) => api.post(`/loans/fines/${fineId}/pay`);
 
 // members
 export const getMembers = () => api.get('/members/');
