@@ -14,20 +14,20 @@ WORKDIR /app
 # Copy project file
 COPY pyproject.toml ./
 
-# Install dependencies using pip (supports PEP 621 format)
-# Extract and install dependencies from pyproject.toml
+# Install dependencies automatically from pyproject.toml (PEP 621 format)
+# Parse pyproject.toml and install dependencies using Python's tomllib
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir \
-        "fastapi>=0.121.2,<0.122.0" \
-        "uvicorn[standard]>=0.38.0,<0.39.0" \
-        "sqlalchemy>=2.0.44,<3.0.0" \
-        "psycopg2-binary>=2.9.11,<3.0.0" \
-        "alembic>=1.17.2,<2.0.0" \
-        "pydantic>=2.12.4,<3.0.0" \
-        "pydantic-settings>=2.12.0,<3.0.0" \
-        "python-multipart>=0.0.20,<0.0.21" \
-        "python-dotenv>=1.0.0" \
-        "supabase>=2.0.0"
+    python3 <<EOF
+import tomllib
+import subprocess
+import sys
+
+with open('pyproject.toml', 'rb') as f:
+    data = tomllib.load(f)
+
+deps = data['project']['dependencies']
+subprocess.run([sys.executable, '-m', 'pip', 'install', '--no-cache-dir'] + deps, check=True)
+EOF
 
 # Production stage
 FROM --platform=linux/amd64 python:3.13-slim

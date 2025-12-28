@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Tag, Card, Typography, Button, Modal, Form, Input, message, Popconfirm, Space } from 'antd';
+import { Table, Tag, Card, Typography, Button, Modal, Form, Input, Select, DatePicker, message, Popconfirm, Space } from 'antd';
 import { BookOutlined, UserOutlined, CalendarOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { getReservations, createReservation, deleteReservation, getBooks, getMembers } from '../services/api';
 import dayjs from 'dayjs';
@@ -45,7 +45,17 @@ const ReservationsPage = () => {
     const handleCreateReservation = async (values) => {
         setConfirmLoading(true);
         try {
-            await createReservation(values);
+            const payload = {
+                member_id: values.member_id,
+                book_id: values.book_id,
+            };
+            
+            // Add reservation_date if provided, otherwise backend will use today
+            if (values.reservation_date) {
+                payload.reservation_date = values.reservation_date.format('YYYY-MM-DD');
+            }
+            
+            await createReservation(payload);
             message.success("Đặt trước thành công!");
             setIsModalOpen(false);
             form.resetFields();
@@ -163,10 +173,46 @@ const ReservationsPage = () => {
             >
                 <Form form={form} layout="vertical" onFinish={handleCreateReservation}>
                     <Form.Item name="member_id" label="Thành viên" rules={[{ required: true, message: 'Vui lòng chọn thành viên!' }]}>
-                        <Input type="number" placeholder="Nhập ID thành viên" />
+                        <Select
+                            placeholder="Chọn thành viên"
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={members.map(member => ({
+                                value: member.id,
+                                label: `${member.full_name} (${member.email})`
+                            }))}
+                            style={{ width: '100%' }}
+                            notFoundContent={members.length === 0 ? 'Đang tải...' : 'Không tìm thấy'}
+                        />
                     </Form.Item>
                     <Form.Item name="book_id" label="Sách" rules={[{ required: true, message: 'Vui lòng chọn sách!' }]}>
-                        <Input type="number" placeholder="Nhập ID sách" />
+                        <Select
+                            placeholder="Chọn sách"
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={books.map(book => ({
+                                value: book.id,
+                                label: `${book.title} - ${book.author}`
+                            }))}
+                            style={{ width: '100%' }}
+                            notFoundContent={books.length === 0 ? 'Đang tải...' : 'Không tìm thấy'}
+                        />
+                    </Form.Item>
+                    <Form.Item 
+                        name="reservation_date" 
+                        label="Ngày đặt trước"
+                        initialValue={dayjs()}
+                    >
+                        <DatePicker
+                            style={{ width: '100%' }}
+                            format="DD/MM/YYYY"
+                            placeholder="Chọn ngày đặt trước"
+                            disabledDate={(current) => current && current < dayjs().startOf('day')}
+                        />
                     </Form.Item>
                     
                     <Button type="primary" htmlType="submit" loading={confirmLoading} block style={{ marginTop: 10, background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937', fontWeight: 'bold' }}>

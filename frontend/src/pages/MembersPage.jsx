@@ -124,9 +124,26 @@ const MembersPage = () => {
                 destroyOnHidden={true}
             >
                 <Form form={form} layout="vertical" onFinish={handleCreateMember}>
-                    <Form.Item name="full_name" label="Họ và tên" rules={[{ required: true }]}> <Input /> </Form.Item>
-                    <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}> <Input /> </Form.Item>
-                    <Form.Item name="phone" label="Số điện thoại"> <Input /> </Form.Item>
+                    <Form.Item 
+                        name="full_name" 
+                        label="Họ và tên" 
+                        rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
+                    > 
+                        <Input placeholder="Nhập họ và tên" /> 
+                    </Form.Item>
+                    <Form.Item 
+                        name="email" 
+                        label="Email" 
+                        rules={[
+                            { required: true, message: 'Vui lòng nhập email!' },
+                            { type: 'email', message: 'Email không hợp lệ!' }
+                        ]}
+                    > 
+                        <Input placeholder="Nhập email" /> 
+                    </Form.Item>
+                    <Form.Item name="phone" label="Số điện thoại"> 
+                        <Input placeholder="Nhập số điện thoại" /> 
+                    </Form.Item>
                     
                     <Button type="primary" htmlType="submit" loading={confirmLoading} block style={{ marginTop: 10, background: '#fbbf24', borderColor: '#fbbf24', color: '#1f2937', fontWeight: 'bold' }}>
                         Xác nhận tạo

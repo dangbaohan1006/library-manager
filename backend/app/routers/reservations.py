@@ -31,7 +31,7 @@ def reserve_book(reservation: ReservationCreate, db: Session = Depends(get_db)):
     new_reservation = Reservation(
         book_id=reservation.book_id,
         member_id=reservation.member_id,
-        reservation_date=date.today(),
+        reservation_date=reservation.reservation_date if reservation.reservation_date else date.today(),
         status="pending"
     )
     

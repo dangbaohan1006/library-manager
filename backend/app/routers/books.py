@@ -1,17 +1,70 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+import uuid
+import boto3
+from botocore.exceptions import ClientError
 
 from app.db.database import get_db
 from app.models import Book, Loan, LoanStatus, Reservation
 from app.schemas import BookResponse, BookCreate, BookUpdate
+from app.core.config import settings
 
 router = APIRouter(
     prefix="/books",
     tags=["Books"],
     responses={404: {"description": "Not found"}},
 )
+
+def get_s3_client():
+    """Initialize and return S3 client"""
+    if not all([settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY, settings.AWS_REGION, settings.S3_BUCKET_NAME]):
+        raise HTTPException(
+            status_code=500, 
+            detail="S3 configuration is missing. Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and S3_BUCKET_NAME"
+        )
+    
+    return boto3.client(
+        's3',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+
+@router.post("/upload-image", status_code=status.HTTP_200_OK)
+async def upload_book_image(file: UploadFile = File(...)):
+    """Upload book cover image to S3 and return the URL"""
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Generate unique filename
+    file_ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+    unique_filename = f"books/{uuid.uuid4()}.{file_ext}"
+    
+    try:
+        s3_client = get_s3_client()
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Upload to S3
+        s3_client.put_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=unique_filename,
+            Body=file_content,
+            ContentType=file.content_type,
+            ACL='public-read'  # Make the file publicly accessible
+        )
+        
+        # Generate public URL
+        image_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{unique_filename}"
+        
+        return {"image_path": image_url}
+    except ClientError as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading to S3: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading image: {str(e)}")
 
 @router.get("/", response_model=List[BookResponse])
 def read_books(
@@ -63,6 +116,7 @@ def create_book(
         available_copies=book_in.total_copies,
         edition=book_in.edition,
         publication_year=book_in.publication_year,
+        image_path=book_in.image_path,
     )
     
     try:
@@ -98,6 +152,8 @@ def update_book(
     book.author = book_update.author
     book.edition = book_update.edition
     book.publication_year = book_update.publication_year
+    if book_update.image_path is not None:
+        book.image_path = book_update.image_path
     
     clean_isbn = book_update.isbn.replace("-", "").replace(" ", "")
     if clean_isbn != book.isbn:

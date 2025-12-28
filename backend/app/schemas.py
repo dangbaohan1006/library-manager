@@ -11,6 +11,7 @@ class BookBase(BaseModel):
     publication_year: Optional[int] = None
     isbn: str = Field(..., min_length=10, max_length=17, example="978-0132350884")
     total_copies: int = Field(default=1, ge=0)
+    image_path: Optional[str] = None
 
     @field_validator('isbn')
     @classmethod
@@ -90,7 +91,7 @@ class ReservationBase(BaseModel):
     book_id: int
 
 class ReservationCreate(ReservationBase):
-    pass
+    reservation_date: Optional[date] = None
 
 class ReservationResponse(ReservationBase):
     id: int

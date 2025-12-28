@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.PROD 
+const API_URL = true 
     ? 'https://beta-api.gigafit.space' 
     : 'http://127.0.0.1:8000';
 
@@ -20,6 +20,15 @@ export const getBookById = (id) => api.get(`/books/${id}`);
 export const createBook = (data) => api.post('/books/', data); 
 export const updateBook = (bookId, data) => api.put(`/books/${bookId}`, data);
 export const deleteBook = (bookId) => api.delete(`/books/${bookId}`);
+export const uploadBookImage = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/books/upload-image', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
 
 // loans
 export const getLoans = () => api.get('/loans/');

@@ -41,6 +41,7 @@ class Book(Base):
     isbn = Column(String, unique=True, index=True, nullable=False)
     total_copies = Column(Integer, default=1, nullable=False)
     available_copies = Column(Integer, default=1, nullable=False)
+    image_path = Column(String, nullable=True)
 
 
     __table_args__ = (
