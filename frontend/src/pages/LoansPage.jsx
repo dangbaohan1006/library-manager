@@ -217,11 +217,23 @@ const LoansPage = () => {
             title: 'Trạng thái', 
             dataIndex: 'status', 
             key: 'status',
-            render: (status) => {
+            render: (status, record) => {
                 let color = 'geekblue';
                 let text = 'Đang mượn';
-                if (status === 'returned') { color = 'green'; text = 'Đã trả'; }
-                if (status === 'overdue') { color = 'volcano'; text = 'Quá hạn'; }
+                
+                if (status === 'returned') { 
+                    color = 'green'; 
+                    text = 'Đã trả'; 
+                } else {
+                    // Kiểm tra nếu due_date < ngày hiện tại và chưa trả
+                    const today = dayjs();
+                    const dueDate = dayjs(record.due_date);
+                    if (dueDate.isBefore(today, 'day')) {
+                        color = 'volcano';
+                        text = 'Quá hạn';
+                    }
+                }
+                
                 return <Tag color={color} key={status}>{text.toUpperCase()}</Tag>;
             }
         },
