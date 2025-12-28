@@ -72,7 +72,7 @@ def get_overdue_loans_detail(db: Session = Depends(get_db)):
             Loan.return_date == None,
             Loan.due_date < today
         )
-    ).all()
+    ).order_by(Loan.id.desc()).all()
 
     response = []
     for loan in overdue_loans:

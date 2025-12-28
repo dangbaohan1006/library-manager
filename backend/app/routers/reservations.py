@@ -46,7 +46,7 @@ def get_reservations(db: Session = Depends(get_db)):
     reservations = db.query(Reservation).options(
         joinedload(Reservation.book),
         joinedload(Reservation.member)
-    ).all()
+    ).order_by(Reservation.id.desc()).all()
     return reservations
 
 @router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
