@@ -14,6 +14,7 @@ import {
   Tooltip,
   App,
   Upload,
+  Select,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -32,6 +33,7 @@ import {
   BASE_URL,
   createReservation,
   uploadBookImage,
+  getMembers,
 } from "../services/api";
 
 const { Meta } = Card;
@@ -105,6 +107,7 @@ const BooksPage = () => {
   const { message } = App.useApp();
 
   const [books, setBooks] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -122,6 +125,15 @@ const BooksPage = () => {
 
   useEffect(() => {
     fetchBooks();
+    const loadMembers = async () => {
+      try {
+        const membersRes = await getMembers();
+        setMembers(membersRes.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    loadMembers();
   }, []);
 
   useEffect(() => {
@@ -607,10 +619,10 @@ const BooksPage = () => {
             <Input />
           </Form.Item>
           <Form.Item name="total_copies" label="Tổng số lượng">
-            <InputNumber min={1} style={{ width: "100%" }} />
+            <InputNumber type="number" min={1} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="publication_year" label="Năm XB">
-            <InputNumber style={{ width: "100%" }} />
+            <InputNumber type="number" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="edition" label="Phiên bản">
             <Input />
@@ -680,13 +692,25 @@ const BooksPage = () => {
         >
           <Form.Item
             name="memberId"
-            label="ID Thành viên"
-            rules={[{ required: true }]}
+            label="Thành viên"
+            rules={[{ required: true, message: 'Vui lòng chọn thành viên!' }]}
           >
-            <Input type="number" placeholder="Nhập ID thành viên mượn" />
+            <Select
+              placeholder="Chọn thành viên"
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={members.map(member => ({
+                value: member.id,
+                label: `${member.full_name} (${member.email})`
+              }))}
+              style={{ width: '100%' }}
+              notFoundContent={members.length === 0 ? 'Đang tải...' : 'Không tìm thấy'}
+            />
           </Form.Item>
           <Form.Item name="days" label="Số ngày mượn">
-            <InputNumber min={1} max={30} style={{ width: "100%" }} />
+            <InputNumber type="number" min={1} max={30} style={{ width: "100%" }} />
           </Form.Item>
         </Form>
       </Modal>
@@ -706,15 +730,27 @@ const BooksPage = () => {
           },
         }}
       >
-        <Form form={reserveForm} layout="vertical" onFinish={handleReserve}>
-          <Form.Item
-            name="memberId"
-            label="ID Thành viên"
-            rules={[{ required: true }]}
-          >
-            <Input type="number" />
-          </Form.Item>
-        </Form>
+         <Form form={reserveForm} layout="vertical" onFinish={handleReserve}>
+           <Form.Item
+             name="memberId"
+             label="Thành viên"
+             rules={[{ required: true, message: 'Vui lòng chọn thành viên!' }]}
+           >
+             <Select
+               placeholder="Chọn thành viên"
+               showSearch
+               filterOption={(input, option) =>
+                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+               }
+               options={members.map(member => ({
+                 value: member.id,
+                 label: `${member.full_name} (${member.email})`
+               }))}
+               style={{ width: '100%' }}
+               notFoundContent={members.length === 0 ? 'Đang tải...' : 'Không tìm thấy'}
+             />
+           </Form.Item>
+         </Form>
       </Modal>
     </div>
   );

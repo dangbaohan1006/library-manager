@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = true 
+const API_URL = import.meta.env.PROD 
     ? 'https://beta-api.gigafit.space' 
     : 'http://127.0.0.1:8000';
 
