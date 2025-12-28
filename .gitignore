@@ -63,3 +63,7 @@ frontend/build/
 logs/
 *.log
 
+# Utility scripts (not needed in repo)
+backend/fix_sequences.py
+backend/check_sequences.py
+backend/test_create_book.py
