@@ -13,6 +13,7 @@ const LoansPage = () => {
     const [filters, setFilters] = useState({});
     const [sortBy, setSortBy] = useState(null);
     const [sortOrder, setSortOrder] = useState('desc');
+    const [searchInput, setSearchInput] = useState('');
 
     const fetchLoans = useCallback(async () => {
         setLoading(true);
@@ -34,6 +35,15 @@ const LoansPage = () => {
     useEffect(() => {
         fetchLoans();
     }, [fetchLoans]);
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setFilters(prev => ({ ...prev, q: searchInput || undefined }));
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchInput]);
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -333,10 +343,11 @@ const LoansPage = () => {
                     <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
                         <Input
                             placeholder="Tên sách, thành viên..."
-                            value={filters.q || ''}
-                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             style={{ width: 200 }}
                             allowClear
+                            onClear={() => setSearchInput('')}
                         />
                     </Form.Item>
                     <Form.Item label={<span style={{ color: '#f3f4f6' }}>Trạng thái</span>}>
@@ -381,6 +392,7 @@ const LoansPage = () => {
                         <Button
                             onClick={() => {
                                 setFilters({});
+                                setSearchInput('');
                                 setSortBy(null);
                                 setSortOrder('desc');
                             }}

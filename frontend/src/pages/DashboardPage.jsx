@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, List, Typography, Spin, Tag, App } from 'antd';
-import { 
-    ReadOutlined, UserOutlined, SyncOutlined, WarningOutlined, 
-    FireOutlined, ArrowRightOutlined, TrophyOutlined
+import {
+    ArrowRightOutlined,
+    ReadOutlined,
+    SyncOutlined,
+    TrophyOutlined,
+    UserOutlined,
+    WarningOutlined
 } from '@ant-design/icons';
-import { getDashboardStats, getTopBooks, getOverdueList, BASE_URL } from '../services/api';
+import { Card, Col, List, Row, Spin, Tag, Typography } from 'antd';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BASE_URL, getDashboardStats, getOverdueList, getTopBooks } from '../services/api';
 
 const { Title, Text } = Typography;
 
@@ -114,7 +119,7 @@ const DashboardPage = () => {
                     <div style={{ marginBottom: 24 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                             <Title level={4} style={{ color: '#f3f4f6', margin: 0 }}>Sách nổi bật</Title>
-                            <Text style={{ color: '#fbbf24', cursor: 'pointer' }}>Xem tất cả <ArrowRightOutlined /></Text>
+                            <Link to="/books" style={{ color: '#fbbf24', cursor: 'pointer' }}>Xem tất cả <ArrowRightOutlined /></Link>
                         </div>
                         <Row gutter={[16, 16]}>
                             {topBooks.slice(0, 3).map((book, index) => (

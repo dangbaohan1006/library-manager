@@ -113,6 +113,7 @@ const BooksPage = () => {
     const [filters, setFilters] = useState({});
     const [sortBy, setSortBy] = useState(null);
     const [sortOrder, setSortOrder] = useState('desc');
+    const [searchInput, setSearchInput] = useState('');
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -160,8 +161,17 @@ const BooksPage = () => {
     }, [message, filters, sortBy, sortOrder]);
 
   useEffect(() => {
-    fetchBooks();
-  }, [fetchBooks]);
+        fetchBooks();
+    }, [fetchBooks]);
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setFilters(prev => ({ ...prev, q: searchInput || undefined }));
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchInput]);
 
     const handleCreateBook = async (values) => {
         setConfirmLoading(true);
@@ -401,14 +411,7 @@ const BooksPage = () => {
         }
     };
 
-  if (loading)
     return (
-      <div style={{ textAlign: "center", marginTop: 50 }}>
-        <Spin size="large" />
-      </div>
-    );
-
-  return (
     <div>
       <div
         style={{
@@ -447,10 +450,11 @@ const BooksPage = () => {
                     <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
                         <Input
                             placeholder="Tên sách, tác giả, ISBN..."
-                            value={filters.q || ''}
-                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             style={{ width: 200 }}
                             allowClear
+                            onClear={() => setSearchInput('')}
                         />
                     </Form.Item>
                     <Form.Item label={<span style={{ color: '#f3f4f6' }}>Sắp xếp</span>}>
@@ -485,6 +489,7 @@ const BooksPage = () => {
                         <Button
                             onClick={() => {
                                 setFilters({});
+                                setSearchInput('');
                                 setSortBy(null);
                                 setSortOrder('desc');
                             }}
@@ -498,6 +503,7 @@ const BooksPage = () => {
             <List
                 grid={{ gutter: 24, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 5 }}
                 dataSource={books}
+                loading={loading}
                 renderItem={(item) => (
                     <List.Item>
                         <Card
@@ -775,7 +781,7 @@ const BooksPage = () => {
                 <div style={{ marginTop: 8 }}>Tải lên</div>
               </div>
             </Upload>
-          </Form.Item>
+                    </Form.Item>
                     <Button
                         type="primary"
                         htmlType="submit"

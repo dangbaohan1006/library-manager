@@ -16,6 +16,7 @@ const MembersPage = () => {
     const [filters, setFilters] = useState({});
     const [sortBy, setSortBy] = useState(null);
     const [sortOrder, setSortOrder] = useState('desc');
+    const [searchInput, setSearchInput] = useState('');
 
     const fetchMembers = useCallback(async () => {
         try {
@@ -35,6 +36,15 @@ const MembersPage = () => {
     }, [filters, sortBy, sortOrder, message]);
 
     useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setFilters(prev => ({ ...prev, q: searchInput || undefined }));
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchInput]);
 
     const handleCreateMember = async (values) => {
         setConfirmLoading(true);
@@ -125,10 +135,11 @@ const MembersPage = () => {
                     <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
                         <Input
                             placeholder="Tên, email..."
-                            value={filters.q || ''}
-                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             style={{ width: 200 }}
                             allowClear
+                            onClear={() => setSearchInput('')}
                         />
                     </Form.Item>
                     <Form.Item label={<span style={{ color: '#f3f4f6' }}>Trạng thái</span>}>
@@ -173,6 +184,7 @@ const MembersPage = () => {
                         <Button
                             onClick={() => {
                                 setFilters({});
+                                setSearchInput('');
                                 setSortBy(null);
                                 setSortOrder('desc');
                             }}
