@@ -20,7 +20,7 @@ class FineStatus(str, enum.Enum):
 class Member(Base):
     __tablename__ = "members"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     email = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String, nullable=False)
     phone = Column(String, nullable=True)
@@ -33,7 +33,7 @@ class Member(Base):
 class Book(Base):
     __tablename__ = "books"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String, index=True, nullable=False)
     author = Column(String, index=True, nullable=False)
     edition = Column(String, nullable=True)
@@ -55,7 +55,7 @@ class Book(Base):
 class Loan(Base):
     __tablename__ = "loans"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     book_id = Column(Integer, ForeignKey("books.id", ondelete="RESTRICT"), nullable=False)
     loan_date = Column(Date, server_default=func.current_date(), nullable=False)
@@ -76,7 +76,7 @@ class Loan(Base):
 class Reservation(Base):
     __tablename__ = "reservations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
     reservation_date = Column(Date, server_default=func.current_date())
@@ -88,7 +88,7 @@ class Reservation(Base):
 class Fine(Base):
     __tablename__ = "fines"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     loan_id = Column(Integer, ForeignKey("loans.id"), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     status = Column(String, default=FineStatus.PENDING, nullable=False)

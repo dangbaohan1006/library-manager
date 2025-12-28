@@ -63,3 +63,5 @@ frontend/build/
 logs/
 *.log
 
+# Utility scripts (not needed in repo)
+backend/fix_sequences.py
