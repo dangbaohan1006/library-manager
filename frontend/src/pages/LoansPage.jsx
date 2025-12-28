@@ -219,19 +219,64 @@ const LoansPage = () => {
                 
                 return (
                     <Space size="middle" direction="vertical" style={{ width: '100%' }}>
-                        {record.status !== 'returned' && (
-                            <Popconfirm
-                                title="Xác nhận trả sách"
-                                description="Bạn có chắc chắn muốn trả cuốn sách này?"
-                                onConfirm={() => handleReturn(record.id)}
-                                okText="Trả ngay"
-                                cancelText="Hủy"
-                            >
-                                <Button type="primary" size="small" icon={<CheckCircleOutlined />} ghost block>
-                                    Trả sách
-                                </Button>
-                            </Popconfirm>
-                        )}
+                        {record.status !== 'returned' && (() => {
+                            const today = dayjs();
+                            const dueDate = dayjs(record.due_date);
+                            const isOverdue = today.isAfter(dueDate, 'day');
+                            const overdueDays = isOverdue ? today.diff(dueDate, 'day') : 0;
+                            const fineAmount = overdueDays * 5000; // FINE_PER_DAY = 5000
+                            
+                            return (
+                                <Popconfirm
+                                    title="Xác nhận trả sách"
+                                    description={
+                                        <div>
+                                            <div style={{ marginBottom: 8 }}>
+                                                Bạn có chắc chắn muốn trả cuốn sách <strong>{record.book?.title || 'N/A'}</strong>?
+                                            </div>
+                                            {isOverdue ? (
+                                                <div style={{ 
+                                                    marginTop: 12, 
+                                                    padding: 12, 
+                                                    background: '#fff7e6', 
+                                                    borderRadius: 6,
+                                                    border: '1px solid #ffd591'
+                                                }}>
+                                                    <div style={{ marginBottom: 6, fontSize: 13, fontWeight: 'bold', color: '#d46b08' }}>
+                                                        ⚠️ Sách đã quá hạn!
+                                                    </div>
+                                                    <div style={{ marginBottom: 4, fontSize: 12, color: '#8c8c8c' }}>
+                                                        Số ngày quá hạn: <strong style={{ color: '#ff4d4f' }}>{overdueDays} ngày</strong>
+                                                    </div>
+                                                    <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                                        Chi phí phạt: <strong style={{ color: '#ff4d4f', fontSize: 13 }}>{formatCurrency(fineAmount)}</strong>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ 
+                                                    marginTop: 8, 
+                                                    padding: 8, 
+                                                    background: '#f6ffed', 
+                                                    borderRadius: 6,
+                                                    border: '1px solid #b7eb8f',
+                                                    fontSize: 12,
+                                                    color: '#52c41a'
+                                                }}>
+                                                    ✅ Sách chưa quá hạn - Không có phí phạt
+                                                </div>
+                                            )}
+                                        </div>
+                                    }
+                                    onConfirm={() => handleReturn(record.id)}
+                                    okText="Trả ngay"
+                                    cancelText="Hủy"
+                                >
+                                    <Button type="primary" size="small" icon={<CheckCircleOutlined />} ghost block>
+                                        Trả sách
+                                    </Button>
+                                </Popconfirm>
+                            );
+                        })()}
                         {record.status === 'returned' && hasUnpaidFine && unpaidFine && (
                             <Popconfirm
                                 title="Xác nhận thanh toán"
