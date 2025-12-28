@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Table, Tag, Card, Avatar, Typography, Button, Modal, Form, Input, message } from 'antd';
+import { useEffect, useState, useCallback } from 'react';
+import { Table, Tag, Card, Avatar, Typography, Button, Modal, Form, Input, message, Select } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, PlusOutlined } from '@ant-design/icons';
 import { getMembers, createMember } from '../services/api';
 import dayjs from 'dayjs';
@@ -13,11 +13,18 @@ const MembersPage = () => {
     const [confirmLoading, setConfirmLoading] = useState(false);
     const [form] = Form.useForm();
     const [pagination, setPagination] = useState({ current: 1, pageSize: 8 });
+    const [filters, setFilters] = useState({});
+    const [sortBy, setSortBy] = useState(null);
+    const [sortOrder, setSortOrder] = useState('desc');
 
-    const fetchMembers = async () => {
+    const fetchMembers = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await getMembers();
+            const params = {
+                ...filters,
+                ...(sortBy && { sort_by: sortBy, sort_order: sortOrder })
+            };
+            const res = await getMembers(params);
             setMembers(res.data);
         } catch (error) {
             console.error(error);
@@ -25,9 +32,9 @@ const MembersPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, sortBy, sortOrder, message]);
 
-    useEffect(() => { fetchMembers(); }, []);
+    useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
     const handleCreateMember = async (values) => {
         setConfirmLoading(true);
@@ -112,6 +119,69 @@ const MembersPage = () => {
                     Thêm mới
                 </Button>
             </div>
+            
+            <Card style={{ marginBottom: 16, background: '#1f2937', border: 'none' }}>
+                <Form layout="inline" style={{ width: '100%' }}>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
+                        <Input
+                            placeholder="Tên, email..."
+                            value={filters.q || ''}
+                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            style={{ width: 200 }}
+                            allowClear
+                        />
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Trạng thái</span>}>
+                        <Select
+                            placeholder="Chọn trạng thái"
+                            value={filters.is_active}
+                            onChange={(value) => setFilters({ ...filters, is_active: value !== undefined ? value : undefined })}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value={true}>Hoạt động</Select.Option>
+                            <Select.Option value={false}>Bị khóa</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Sắp xếp</span>}>
+                        <Select
+                            placeholder="Chọn cột"
+                            value={sortBy}
+                            onChange={(value) => setSortBy(value)}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value="full_name">Tên</Select.Option>
+                            <Select.Option value="email">Email</Select.Option>
+                            <Select.Option value="joined_date">Ngày tham gia</Select.Option>
+                            <Select.Option value="is_active">Trạng thái</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    {sortBy && (
+                        <Form.Item>
+                            <Select
+                                value={sortOrder}
+                                onChange={(value) => setSortOrder(value)}
+                                style={{ width: 120 }}
+                            >
+                                <Select.Option value="asc">Tăng dần</Select.Option>
+                                <Select.Option value="desc">Giảm dần</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    )}
+                    <Form.Item>
+                        <Button
+                            onClick={() => {
+                                setFilters({});
+                                setSortBy(null);
+                                setSortOrder('desc');
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
             
             <Card bodyStyle={{ padding: 0 }} style={{ border: 'none', overflow: 'hidden', background: '#1f2937', borderRadius: 16 }}>
                 <Table 

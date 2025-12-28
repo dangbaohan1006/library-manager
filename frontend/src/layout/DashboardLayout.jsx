@@ -60,13 +60,7 @@ const DashboardLayout = ({ children }) => {
             </Sider>
 
             <Layout className="site-layout" style={{ background: 'transparent' }}>
-                <Header style={{ padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', background: 'transparent' }}>
-                    <Input 
-                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} 
-                        placeholder="Tìm kiếm sách, tác giả, ISBN..." 
-                        style={{ width: 400, borderRadius: 8, background: '#2a2a4a', border: 'none', padding: '8px 12px', color: '#e0e0e0' }}
-                    />
-                    
+                <Header style={{ padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'end', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', background: 'transparent' }}>
                     <Space size={24}>
                         <Badge dot>
                             <BellOutlined style={{ fontSize: 20, color: '#e0e0e0', cursor: 'pointer' }} />

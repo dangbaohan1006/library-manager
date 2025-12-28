@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Table, Tag, Card, Typography, Button, Modal, Form, Input, Select, DatePicker, message, Popconfirm, Space } from 'antd';
+import { useEffect, useState, useCallback } from 'react';
+import { Table, Tag, Card, Typography, Button, Modal, Form, Input, Select, DatePicker, message, Popconfirm, Space, Tooltip } from 'antd';
 import { BookOutlined, UserOutlined, CalendarOutlined, DeleteOutlined, PlusOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { getReservations, createReservation, deleteReservation, getBooks, getMembers, borrowBook } from '../services/api';
 import dayjs from 'dayjs';
@@ -15,11 +15,18 @@ const ReservationsPage = () => {
     const [books, setBooks] = useState([]);
     const [members, setMembers] = useState([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+    const [filters, setFilters] = useState({});
+    const [sortBy, setSortBy] = useState(null);
+    const [sortOrder, setSortOrder] = useState('desc');
 
-    const fetchReservations = async () => {
+    const fetchReservations = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await getReservations();
+            const params = {
+                ...filters,
+                ...(sortBy && { sort_by: sortBy, sort_order: sortOrder })
+            };
+            const res = await getReservations(params);
             setReservations(res.data);
         } catch (error) {
             console.error(error);
@@ -27,7 +34,7 @@ const ReservationsPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, sortBy, sortOrder, message]);
 
     useEffect(() => {
         fetchReservations();
@@ -41,7 +48,7 @@ const ReservationsPage = () => {
             }
         };
         loadOptions();
-    }, []);
+    }, [fetchReservations]);
 
     const handleCreateReservation = async (values) => {
         setConfirmLoading(true);
@@ -192,9 +199,20 @@ const ReservationsPage = () => {
             title: 'Hành động',
             key: 'action',
             width: 200,
-            render: (_, record) => (
+            render: (_, record) => {
+                // Calculate if this reservation can borrow the book
+                // Check available copies and other pending reservations for the same book
+                const availableCopies = record.book?.available_copies || 0;
+                const otherPendingReservations = reservations.filter(
+                    r => r.status === 'pending' && 
+                    r.book_id === record.book_id && 
+                    r.id !== record.id
+                ).length;
+                const canBorrow = availableCopies > otherPendingReservations && availableCopies > 0;
+                
+                return (
                 <Space size="middle">
-                    {record.status === 'pending' && record.book && record.book.available_copies > 0 && (
+                    {record.status === 'pending' && record.book && canBorrow && (
                         <Popconfirm
                             title="Xác nhận mượn sách"
                             description={
@@ -224,6 +242,29 @@ const ReservationsPage = () => {
                             </Button>
                         </Popconfirm>
                     )}
+                    {record.status === 'pending' && record.book && !canBorrow && (
+                        <Tooltip title={
+                            availableCopies === 0 
+                                ? "Sách hiện không còn sẵn sàng" 
+                                : `Còn ${availableCopies} sách nhưng có ${otherPendingReservations} đặt trước khác đang chờ`
+                        }>
+                            <Button 
+                                type="primary" 
+                                size="small" 
+                                icon={<ShoppingCartOutlined />}
+                                disabled
+                                style={{ 
+                                    background: '#6b7280', 
+                                    borderColor: '#6b7280', 
+                                    color: '#fff', 
+                                    fontWeight: 'bold',
+                                    cursor: 'not-allowed'
+                                }}
+                            >
+                                Mượn sách
+                            </Button>
+                        </Tooltip>
+                    )}
                     <Popconfirm
                         title="Xác nhận hủy đặt trước"
                         description="Bạn có chắc chắn muốn hủy đặt trước này?"
@@ -236,7 +277,8 @@ const ReservationsPage = () => {
                         </Button>
                     </Popconfirm>
                 </Space>
-            ),
+                );
+            },
         },
     ];
 
@@ -256,7 +298,69 @@ const ReservationsPage = () => {
                     Đặt trước mới
                 </Button>
             </div>
-            
+
+            <Card style={{ marginBottom: 16, background: '#1f2937', border: 'none' }}>
+                <Form layout="inline" style={{ width: '100%' }}>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
+                        <Input
+                            placeholder="Tên sách, thành viên..."
+                            value={filters.q || ''}
+                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            style={{ width: 200 }}
+                            allowClear
+                        />
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Trạng thái</span>}>
+                        <Select
+                            placeholder="Chọn trạng thái"
+                            value={filters.status}
+                            onChange={(value) => setFilters({ ...filters, status: value || undefined })}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value="pending">Đang chờ</Select.Option>
+                            <Select.Option value="approved">Đã duyệt</Select.Option>
+                            <Select.Option value="fulfilled">Đã hoàn thành</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Sắp xếp</span>}>
+                        <Select
+                            placeholder="Chọn cột"
+                            value={sortBy}
+                            onChange={(value) => setSortBy(value)}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value="reservation_date">Ngày đặt</Select.Option>
+                            <Select.Option value="status">Trạng thái</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    {sortBy && (
+                        <Form.Item>
+                            <Select
+                                value={sortOrder}
+                                onChange={(value) => setSortOrder(value)}
+                                style={{ width: 120 }}
+                            >
+                                <Select.Option value="asc">Tăng dần</Select.Option>
+                                <Select.Option value="desc">Giảm dần</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    )}
+                    <Form.Item>
+                        <Button
+                            onClick={() => {
+                                setFilters({});
+                                setSortBy(null);
+                                setSortOrder('desc');
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
+
             <Card bodyStyle={{ padding: 0 }} style={{ border: 'none', overflow: 'hidden', background: '#1f2937', borderRadius: 16 }}>
                 <Table 
                     columns={columns} 

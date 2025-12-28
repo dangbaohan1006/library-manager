@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from typing import List
+from sqlalchemy import asc, desc, or_
+from typing import List, Optional
 from datetime import date
 
 from app.db.database import get_db
@@ -42,12 +43,54 @@ def reserve_book(reservation: ReservationCreate, db: Session = Depends(get_db)):
     return new_reservation
 
 @router.get("/", response_model=List[ReservationResponse])
-def get_reservations(db: Session = Depends(get_db)):
-    reservations = db.query(Reservation).options(
+def get_reservations(
+    skip: int = 0,
+    limit: int = 100,
+    q: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "desc",
+    status: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Reservation).options(
         joinedload(Reservation.book),
         joinedload(Reservation.member)
-    ).order_by(Reservation.id.desc()).all()
-    return reservations
+    )
+    
+    # Text search filter
+    if q:
+        search = f"%{q}%"
+        query = query.join(Book).join(Member).filter(
+            or_(
+                Book.title.ilike(search),
+                Member.full_name.ilike(search),
+                Member.email.ilike(search)
+            )
+        )
+    
+    # Status filter
+    if status:
+        query = query.filter(Reservation.status == status)
+    
+    # Sorting
+    if sort_by:
+        sort_column = None
+        if sort_by == "reservation_date":
+            sort_column = Reservation.reservation_date
+        elif sort_by == "status":
+            sort_column = Reservation.status
+        
+        if sort_column:
+            if sort_order == "asc":
+                query = query.order_by(asc(sort_column))
+            else:
+                query = query.order_by(desc(sort_column))
+        else:
+            query = query.order_by(Reservation.id.desc())
+    else:
+        query = query.order_by(Reservation.id.desc())
+    
+    return query.offset(skip).limit(limit).all()
 
 @router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_reservation(reservation_id: int, db: Session = Depends(get_db)):

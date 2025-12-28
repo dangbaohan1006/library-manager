@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Table, Tag, Button, Card, Typography, message, Popconfirm, Space, Tooltip } from 'antd';
+import { useEffect, useState, useCallback } from 'react';
+import { Table, Tag, Button, Card, Typography, message, Popconfirm, Space, Tooltip, Form, Input, Select } from 'antd';
 import { CheckCircleOutlined, SyncOutlined, ClockCircleOutlined, DollarOutlined } from '@ant-design/icons';
 import { getLoans, returnBook, payFine } from '../services/api';
 import dayjs from 'dayjs';
@@ -10,11 +10,18 @@ const LoansPage = () => {
     const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+    const [filters, setFilters] = useState({});
+    const [sortBy, setSortBy] = useState(null);
+    const [sortOrder, setSortOrder] = useState('desc');
 
-    const fetchLoans = async () => {
+    const fetchLoans = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await getLoans();
+            const params = {
+                ...filters,
+                ...(sortBy && { sort_by: sortBy, sort_order: sortOrder })
+            };
+            const response = await getLoans(params);
             setLoans(response.data);
         } catch (err) {
             console.error(err);
@@ -22,11 +29,11 @@ const LoansPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, sortBy, sortOrder]);
 
     useEffect(() => {
         fetchLoans();
-    }, []);
+    }, [fetchLoans]);
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -320,6 +327,69 @@ const LoansPage = () => {
                 </div>
                 <Button icon={<SyncOutlined />} onClick={fetchLoans}>Làm mới</Button>
             </div>
+
+            <Card style={{ marginBottom: 16, background: '#1f2937', border: 'none' }}>
+                <Form layout="inline" style={{ width: '100%' }}>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
+                        <Input
+                            placeholder="Tên sách, thành viên..."
+                            value={filters.q || ''}
+                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            style={{ width: 200 }}
+                            allowClear
+                        />
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Trạng thái</span>}>
+                        <Select
+                            placeholder="Chọn trạng thái"
+                            value={filters.status}
+                            onChange={(value) => setFilters({ ...filters, status: value || undefined })}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value="active">Đang mượn</Select.Option>
+                            <Select.Option value="returned">Đã trả</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Sắp xếp</span>}>
+                        <Select
+                            placeholder="Chọn cột"
+                            value={sortBy}
+                            onChange={(value) => setSortBy(value)}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value="loan_date">Ngày mượn</Select.Option>
+                            <Select.Option value="due_date">Hạn trả</Select.Option>
+                            <Select.Option value="return_date">Ngày trả</Select.Option>
+                            <Select.Option value="status">Trạng thái</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    {sortBy && (
+                        <Form.Item>
+                            <Select
+                                value={sortOrder}
+                                onChange={(value) => setSortOrder(value)}
+                                style={{ width: 120 }}
+                            >
+                                <Select.Option value="asc">Tăng dần</Select.Option>
+                                <Select.Option value="desc">Giảm dần</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    )}
+                    <Form.Item>
+                        <Button
+                            onClick={() => {
+                                setFilters({});
+                                setSortBy(null);
+                                setSortOrder('desc');
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
 
             <Card style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
                 <Table 

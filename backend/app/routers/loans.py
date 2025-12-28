@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import asc, desc, or_
 from datetime import timedelta, date
-from typing import List
+from typing import List, Optional
 
 from app.db.database import get_db
 from app.models import Loan, Book, Member, Fine, LoanStatus, FineStatus, Reservation
@@ -29,8 +30,28 @@ def borrow_book(loan_in: LoanCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Limit reached")
 
         book = db.query(Book).filter(Book.id == loan_in.book_id).with_for_update().first()
-        if not book or book.available_copies < 1:
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+        
+        # Check if book has available copies
+        if book.available_copies < 1:
             raise HTTPException(status_code=400, detail="Out of stock")
+        
+        # If borrowing from reservation, check if there are enough copies
+        # considering other pending reservations for the same book
+        if loan_in.reservation_id:
+            pending_reservations_count = db.query(Reservation).filter(
+                Reservation.book_id == loan_in.book_id,
+                Reservation.status == 'pending',
+                Reservation.id != loan_in.reservation_id
+            ).count()
+            
+            # Need at least 1 copy available after considering other pending reservations
+            if book.available_copies <= pending_reservations_count:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Not enough copies available. There are {pending_reservations_count} other pending reservations for this book."
+                )
 
         book.available_copies -= 1
         
@@ -100,13 +121,59 @@ def return_book(loan_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Transaction failed: {str(e)}")
 
 @router.get("/", response_model=List[LoanResponse])
-def read_loans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    loans = db.query(Loan).options(
+def read_loans(
+    skip: int = 0, 
+    limit: int = 100,
+    q: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "desc",
+    status: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Loan).options(
         joinedload(Loan.book), 
         joinedload(Loan.member),
         joinedload(Loan.fines)
-    ).order_by(Loan.id.desc()).offset(skip).limit(limit).all()
-    return loans
+    )
+    
+    # Text search filter
+    if q:
+        search = f"%{q}%"
+        query = query.join(Book).join(Member).filter(
+            or_(
+                Book.title.ilike(search),
+                Member.full_name.ilike(search),
+                Member.email.ilike(search)
+            )
+        )
+    
+    # Status filter
+    if status:
+        query = query.filter(Loan.status == status)
+    
+    # Sorting
+    if sort_by:
+        sort_column = None
+        if sort_by == "loan_date":
+            sort_column = Loan.loan_date
+        elif sort_by == "due_date":
+            sort_column = Loan.due_date
+        elif sort_by == "return_date":
+            sort_column = Loan.return_date
+        elif sort_by == "status":
+            sort_column = Loan.status
+        
+        if sort_column:
+            if sort_order == "asc":
+                query = query.order_by(asc(sort_column))
+            else:
+                query = query.order_by(desc(sort_column))
+        else:
+            query = query.order_by(Loan.id.desc())
+    else:
+        query = query.order_by(Loan.id.desc())
+    
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/check-access")
 def check_loan_access(book_id: int, member_id: int, db: Session = Depends(get_db)):

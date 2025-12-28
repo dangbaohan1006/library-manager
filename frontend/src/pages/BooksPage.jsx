@@ -110,6 +110,9 @@ const BooksPage = () => {
   const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [filters, setFilters] = useState({});
+    const [sortBy, setSortBy] = useState(null);
+    const [sortOrder, setSortOrder] = useState('desc');
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -142,7 +145,11 @@ const BooksPage = () => {
   const fetchBooks = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await getBooks();
+            const params = {
+                ...filters,
+                ...(sortBy && { sort_by: sortBy, sort_order: sortOrder })
+            };
+            const response = await getBooks(params);
             setBooks(response.data);
         } catch (error) {
             console.error(error);
@@ -150,7 +157,7 @@ const BooksPage = () => {
         } finally {
             setLoading(false);
         }
-  }, [message]);
+    }, [message, filters, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchBooks();
@@ -435,6 +442,59 @@ const BooksPage = () => {
                 </Button>
             </div>
 
+            <Card style={{ marginBottom: 24, background: '#1f2937', border: 'none' }}>
+                <Form layout="inline" style={{ width: '100%' }}>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Tìm kiếm</span>}>
+                        <Input
+                            placeholder="Tên sách, tác giả, ISBN..."
+                            value={filters.q || ''}
+                            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                            style={{ width: 200 }}
+                            allowClear
+                        />
+                    </Form.Item>
+                    <Form.Item label={<span style={{ color: '#f3f4f6' }}>Sắp xếp</span>}>
+                        <Select
+                            placeholder="Chọn cột"
+                            value={sortBy}
+                            onChange={(value) => setSortBy(value)}
+                            style={{ width: 150 }}
+                            allowClear
+                        >
+                            <Select.Option value="title">Tên sách</Select.Option>
+                            <Select.Option value="author">Tác giả</Select.Option>
+                            <Select.Option value="isbn">ISBN</Select.Option>
+                            <Select.Option value="publication_year">Năm xuất bản</Select.Option>
+                            <Select.Option value="total_copies">Tổng số bản</Select.Option>
+                            <Select.Option value="available_copies">Số bản có sẵn</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    {sortBy && (
+                        <Form.Item>
+                            <Select
+                                value={sortOrder}
+                                onChange={(value) => setSortOrder(value)}
+                                style={{ width: 120 }}
+                            >
+                                <Select.Option value="asc">Tăng dần</Select.Option>
+                                <Select.Option value="desc">Giảm dần</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    )}
+                    <Form.Item>
+                        <Button
+                            onClick={() => {
+                                setFilters({});
+                                setSortBy(null);
+                                setSortOrder('desc');
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
+
             <List
                 grid={{ gutter: 24, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 5 }}
                 dataSource={books}
@@ -492,10 +552,11 @@ const BooksPage = () => {
                                     type="primary"
                                     onClick={() => showBorrowModal(item)}
                                     icon={<ShoppingCartOutlined />}
+                                    disabled={item.available_copies < 1}
                     style={{
                       borderRadius: 8,
-                      background: "#fbbf24",
-                      borderColor: "#fbbf24",
+                      background: item.available_copies < 1 ? "#6b7280" : "#fbbf24",
+                      borderColor: item.available_copies < 1 ? "#6b7280" : "#fbbf24",
                       color: "#1f2937",
                       fontWeight: "bold",
                     }}

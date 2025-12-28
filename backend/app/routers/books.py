@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, asc, desc
 import uuid
 import boto3
 from botocore.exceptions import ClientError
@@ -70,10 +70,17 @@ async def upload_book_image(file: UploadFile = File(...)):
 def read_books(
     skip: int = 0, 
     limit: int = 100, 
-    q: Optional[str] = None, 
+    q: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "desc",
+    title: Optional[str] = None,
+    author: Optional[str] = None,
+    isbn: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(Book)
+    
+    # Text search filter
     if q:
         search = f"%{q}%" 
         query = query.filter(
@@ -83,7 +90,42 @@ def read_books(
                 Book.isbn.ilike(search)
             )
         )
-    return query.order_by(Book.id.desc()).offset(skip).limit(limit).all()
+    
+    # Column-specific filters
+    if title:
+        query = query.filter(Book.title.ilike(f"%{title}%"))
+    if author:
+        query = query.filter(Book.author.ilike(f"%{author}%"))
+    if isbn:
+        query = query.filter(Book.isbn.ilike(f"%{isbn}%"))
+    
+    # Sorting
+    if sort_by:
+        sort_column = None
+        if sort_by == "title":
+            sort_column = Book.title
+        elif sort_by == "author":
+            sort_column = Book.author
+        elif sort_by == "isbn":
+            sort_column = Book.isbn
+        elif sort_by == "publication_year":
+            sort_column = Book.publication_year
+        elif sort_by == "total_copies":
+            sort_column = Book.total_copies
+        elif sort_by == "available_copies":
+            sort_column = Book.available_copies
+        
+        if sort_column:
+            if sort_order == "asc":
+                query = query.order_by(asc(sort_column))
+            else:
+                query = query.order_by(desc(sort_column))
+        else:
+            query = query.order_by(Book.id.desc())
+    else:
+        query = query.order_by(Book.id.desc())
+    
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/{book_id}", response_model=BookResponse)
 def read_book(book_id: int, db: Session = Depends(get_db)):

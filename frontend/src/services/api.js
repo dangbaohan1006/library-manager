@@ -29,20 +29,20 @@ export const uploadBookImage = (file) => {
 };
 
 // loans
-export const getLoans = () => api.get('/loans/');
+export const getLoans = (params) => api.get('/loans/', { params });
 export const borrowBook = (data) => api.post('/loans/borrow', data);
 export const returnBook = (loanId) => api.post(`/loans/return/${loanId}`);
 export const checkLoanAccess = (bookId, memberId) => api.get(`/loans/check-access`, { params: { book_id: bookId, member_id: memberId } });
 export const payFine = (fineId) => api.post(`/loans/fines/${fineId}/pay`);
 
 // members
-export const getMembers = () => api.get('/members/');
+export const getMembers = (params) => api.get('/members/', { params });
 export const createMember = (data) => api.post('/members/', data); 
 export const updateMember = (id, data) => api.put(`/members/${id}`, data);
 export const deleteMember = (id) => api.delete(`/members/${id}`);
 
 // reservations
-export const getReservations = () => api.get('/reservations/');
+export const getReservations = (params) => api.get('/reservations/', { params });
 export const createReservation = (data) => api.post('/reservations/reserve', data);
 export const deleteReservation = (id) => api.delete(`/reservations/${id}`);
 
