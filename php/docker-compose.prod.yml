@@ -1,0 +1,51 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE:-quanluonluon/library-manager-php:latest}
+    container_name: library_manager_backend_php
+    env_file: .env
+    restart: always
+
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP router
+      - "traefik.http.routers.php-app.rule=Host(`php-api.gigafit.space`)"
+      - "traefik.http.routers.php-app.entrypoints=web"
+
+      # Tell traefik the internal port
+      - "traefik.http.services.php-app.loadbalancer.server.port=8000"
+
+      # HTTPS router
+      - "traefik.http.routers.php-app-secure.rule=Host(`php-api.gigafit.space`)"
+      - "traefik.http.routers.php-app-secure.entrypoints=websecure"
+      - "traefik.http.routers.php-app-secure.tls=true"
+      - "traefik.http.routers.php-app-secure.tls.certresolver=myresolver"
+
+      # Sticky session for WebSocket (if needed)
+      - "traefik.http.services.php-app.loadbalancer.sticky=true"
+      - "traefik.http.services.php-app.loadbalancer.sticky.cookie.name=library_api_php_affinity"
+      - "traefik.http.services.php-app.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.php-app.loadbalancer.sticky.cookie.httpOnly=true"
+
+    volumes:
+      - ./storage:/app/storage
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - traefik_net
+
+networks:
+  traefik_net:
+    external: true
+

@@ -330,7 +330,7 @@ const LoansPage = () => {
                                     style={{ background: '#52c41a', borderColor: '#52c41a' }}
                                     block
                                 >
-                                    Đã thanh toán
+                                    Thanh toán
                                 </Button>
                             </Popconfirm>
                         )}
